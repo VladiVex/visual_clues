@@ -150,7 +150,7 @@ class TokensPipeline:
 
             img = self.load_img_url(img_url, pil_type=True)
             cropped_image = img.crop((scaled_bbox[0], scaled_bbox[1], scaled_bbox[2], scaled_bbox[3]))
-            processed_frame = self.blip_captioner.process_frame(cropped_image, convert=False)
+            processed_frame = self.blip_captioner.process_frame(cropped_image)
             bbox_caption = self.blip_captioner.generate_caption(processed_frame)
 
             local_dict.append({
@@ -172,10 +172,6 @@ class TokensPipeline:
         return json_local_tokens
 
 
-
-
-
-
     def create_global_tokens(self, img_url):
         """
         Returns a JSON with global tokens for an image url.
@@ -187,7 +183,7 @@ class TokensPipeline:
         scores_places = self.compute_scores(self.ontology_places, img, top_n = 10)
 
         img = self.load_img_url(img_url, pil_type=True)
-        processed_frame = self.blip_captioner.process_frame(img, convert=False)
+        processed_frame = self.blip_captioner.process_frame(img)
         caption = self.blip_captioner.generate_caption(processed_frame)
 
         json_global_tokens = self.create_json_global_tokens(movie_id = "123456", mdf="1", global_objects=scores_objects,
@@ -195,16 +191,6 @@ class TokensPipeline:
                                                          global_scenes=scores_places, img_url=img_url, source="None")
 
         return json_global_tokens
-
-
-    
-
-
-
-
-
-
-
 
 
 def main():
