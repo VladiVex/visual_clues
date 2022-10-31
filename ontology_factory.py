@@ -1,5 +1,5 @@
-from nebula3_videoprocessing.videoprocessing.utils.singleton import Singleton
-from nebula3_videoprocessing.videoprocessing.utils import consts
+from visual_clues.utils.singleton import Singleton
+from visual_clues.utils import consts
 import json
 import numpy as np
 class OntologyFactory:
@@ -13,7 +13,8 @@ class OntologyFactory:
             'objects': consts.object_json_path,
             'vg_objects': consts.vg_object_json_path,
             'verbs': consts.verb_json_path,
-            'vg_verbs': consts.vg_verb_json_path
+            'vg_verbs': consts.vg_verb_json_path,
+            'scenes': consts.scene_json_path
         }
 
     def preprocess_ontology(self, ontology_path):

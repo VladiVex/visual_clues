@@ -1,5 +1,5 @@
-from nebula3_videoprocessing.videoprocessing.vlm_implementation import ClipVlmImplementation, BlipItcVlmImplementation, BlipItmVlmImplementation, VisualGroundingToVlmAdapter
-from nebula3_videoprocessing.videoprocessing.utils.singleton import Singleton
+from visual_clues.vlm_implementation import ClipVlmImplementation, BlipItcVlmImplementation, BlipItmVlmImplementation, VisualGroundingToVlmAdapter
+from visual_clues.utils.singleton import Singleton
 # from nebula3_experts_vg.vg.vg_expert import VisualGroundingVlmImplementation
 class VlmFactory:
     _creators = {}

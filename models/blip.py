@@ -8,8 +8,8 @@
 import warnings
 warnings.filterwarnings("ignore")
 
-from nebula3_videoprocessing.videoprocessing.models.vit import VisionTransformer, interpolate_pos_embed
-from nebula3_videoprocessing.videoprocessing.models.med import BertConfig, BertModel, BertLMHeadModel
+from visual_clues.models.vit import VisionTransformer, interpolate_pos_embed
+from visual_clues.models.med import BertConfig, BertModel, BertLMHeadModel
 from transformers import BertTokenizer
 
 import torch

@@ -1,17 +1,17 @@
-from nebula3_videoprocessing.videoprocessing.vlm_interface import VlmInterface
-from nebula3_videoprocessing.videoprocessing.utils.config import config
+from visual_clues.vlm_interface import VlmInterface
+from visual_clues.utils.config import config
 import typing
 from PIL import Image
 import requests
 import torch
 import numpy as np
 from transformers import CLIPProcessor, CLIPModel
-from models.blip_itm import blip_itm
+from visual_clues.models.blip_itm import blip_itm
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
-from nebula3_experts_vg.vg.visual_grounding_inference import OfaMultiModalVisualGrounding
-from nebula3_videoprocessing.videoprocessing.owl_vit_impl import OwlVitImplementation
+# from nebula3_experts_vg.vg.visual_grounding_inference import OfaMultiModalVisualGrounding
+# from nebula3_videoprocessing.videoprocessing.owl_vit_impl import OwlVitImplementation
 
 
 class VlmBaseImplementation(VlmInterface):

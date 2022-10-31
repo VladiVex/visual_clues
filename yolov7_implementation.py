@@ -8,7 +8,7 @@ import cv2
 
 import torch.backends.cudnn as cudnn
 
-from utils.general import non_max_suppression
+from visual_clues.utils.general import non_max_suppression
 
 # from .tracker_model import TrackerModel
 # from tracker.common.config import TRACKER_CONF
@@ -18,18 +18,19 @@ import os
 
 from PIL import Image
 
-from utils.torch_utils import select_device
-from models.experimental import attempt_load
-from utils.datasets import letterbox
+from visual_clues.utils.torch_utils import select_device
+from visual_clues.models.experimental import attempt_load
+from visual_clues.utils.datasets import letterbox
 import random
 import requests
 import numpy as np
-from utils.general import scale_coords
+from visual_clues.utils.general import scale_coords
+import os.path
 
 class YoloTrackerModel(): # Inherits from TrackerModel ?
 
     def __init__(self):
-        super().__init__()
+        # super().__init__()
         # self.config = TRACKER_CONF()
         self.model, self.device, self.half, self.names, self.colors = self.load_model()
         self.img_size = 640
@@ -41,15 +42,16 @@ class YoloTrackerModel(): # Inherits from TrackerModel ?
         # self.confidence = self.config.CONFIDENCE_THRESHOLD
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         half = device.type != 'cpu'
-        # checkpoints_name = 'yolov7.pt'
-        # if not os.access(checkpoints_name, os.W_OK):
-        #     synset_url = 'https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7.pt'
-        #     os.system('wget ' + synset_url)
-        
-        # cur_dir_path = os.path.dirname(os.path.abspath(__file__))
-        weights = "/notebooks/yolov7/yolov7.pt" #os.path.join(cur_dir_path, checkpoints_name)
+        checkpoints_name = 'yolov7.pt'
+        cur_dir_path = os.path.dirname(os.path.abspath(__file__))
+        weights = os.path.join(cur_dir_path, checkpoints_name)
+        if not os.path.isfile(weights):
+            synset_url = 'https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7.pt'
+            os.system('wget ' + synset_url)
+
+        #"/notebooks/yolov7/yolov7.pt" #
         model = attempt_load(weights, map_location=device)  # load
-         #torch.load(weights, map_location=device)  # load FP32 model
+        #torch.load(weights, map_location=device)  # load FP32 model
 
         # Convert model to FP16 (faster inference time if GPU is available)
         if half:
@@ -116,6 +118,8 @@ class YoloTrackerModel(): # Inherits from TrackerModel ?
         # Apply NMS
         pred = non_max_suppression(pred)
 
+        outputs = []
+
         # Process detections
         for i, det in enumerate(pred):  # detections per image
 
@@ -129,17 +133,21 @@ class YoloTrackerModel(): # Inherits from TrackerModel ?
                 confidence = str(conf.tolist())
                 line = ' '.join((class_name, bbox, confidence))
                 print(f"Detected: {line}")
+                outputs.append({'detections_boxes': bbox, 'detection_scores': confidence, 'detection_classes': class_name})
         
         # PLOT BBOXES ON IMAGE - SANITY TEST - TO DELETE LATER
-        label = f'{self.names[int(cls)]} {conf:.2f}'
-        url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg"
-        img_orig = Image.open(requests.get(url, stream=True).raw) 
-        self.plot_one_box(xyxy, img_orig, label=label, color=self.colors[int(cls)], line_thickness=3)
-        # TO DELETE - SANITY TEXT OF BBOXES ON IMAGE
-        cv2.imwrite("/notebooks/nebula3_videoprocessing/videoprocessing/", img_orig)
-        print(f" The image with the result is saved")
+        # label = f'{self.names[int(cls)]} {conf:.2f}'
+        # url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg"
+        # # img_orig = Image.open(requests.get(url, stream=True).raw) 
+        # resp = requests.get(url, stream=True).raw
+        # image = np.asarray(bytearray(resp.read()), dtype="uint8")
+        # img_orig = cv2.imdecode(image, cv2.IMREAD_COLOR)
+        # self.plot_one_box(xyxy, img_orig, label=label, color=self.colors[int(cls)], line_thickness=3)
+        # # TO DELETE - SANITY TEXT OF BBOXES ON IMAGE
+        # cv2.imwrite("/notebooks/nebula3_videoprocessing/videoprocessing/test123.jpg", img_orig)
+        # print(f" The image with the result is saved")
 
-        return line
+        return outputs
 
 
 def main():

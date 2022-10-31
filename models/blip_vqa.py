@@ -1,5 +1,5 @@
-from models.med import BertConfig, BertModel, BertLMHeadModel
-from models.blip import create_vit, init_tokenizer, load_checkpoint
+from visual_clues.models.med import BertConfig, BertModel, BertLMHeadModel
+from visual_clues.models.blip import create_vit, init_tokenizer, load_checkpoint
 
 import torch
 from torch import nn

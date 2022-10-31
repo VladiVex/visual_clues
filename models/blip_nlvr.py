@@ -1,7 +1,7 @@
-from models.med import BertConfig
-from models.nlvr_encoder import BertModel
-from models.vit import interpolate_pos_embed
-from models.blip import create_vit, init_tokenizer, is_url
+from visual_clues.models.med import BertConfig
+from visual_clues.models.nlvr_encoder import BertModel
+from visual_clues.models.vit import interpolate_pos_embed
+from visual_clues.models.blip import create_vit, init_tokenizer, is_url
 
 from timm.models.hub import download_cached_file
 

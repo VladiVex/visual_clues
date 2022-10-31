@@ -1,11 +1,11 @@
-from videoprocessing.models.med import BertConfig, BertModel
+from visual_clues.models.med import BertConfig, BertModel
 from transformers import BertTokenizer
 
 import torch
 from torch import nn
 import torch.nn.functional as F
 import os
-from videoprocessing.models.blip import create_vit, init_tokenizer, load_checkpoint
+from visual_clues.models.blip import create_vit, init_tokenizer, load_checkpoint
 script_dir = os.path.dirname(__file__)
 config_path = os.path.join(script_dir, "med_config.json")
 class BLIP_ITM(nn.Module):

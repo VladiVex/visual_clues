@@ -1,7 +1,7 @@
-from nebula3_videoprocessing.videoprocessing.ontology_interface import OntologyInterface
-from nebula3_videoprocessing.videoprocessing.ontology_factory import OntologyFactory
-from nebula3_videoprocessing.videoprocessing.vlm_factory import VlmFactory
-from nebula3_videoprocessing.videoprocessing.utils import consts
+from visual_clues.ontology_interface import OntologyInterface
+from visual_clues.ontology_factory import OntologyFactory
+from visual_clues.vlm_factory import VlmFactory
+from visual_clues.utils import consts
 import typing
 from PIL import Image
 import requests
@@ -130,7 +130,7 @@ class EnsembleOntologyImplementation(OntologyInterface):
             temp_outputs = []
 
             # If VLM crashes, you can extend 10 to bigger number.
-            div_texts = len(self.texts) // 10
+            div_texts = len(self.texts) // 20
             len_texts = len(self.texts) 
             for i in range(0, len_texts, div_texts):
                 if (i + div_texts) > len_texts:

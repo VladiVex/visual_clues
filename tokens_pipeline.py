@@ -10,12 +10,14 @@ from nebula3_database.movie_db import MOVIE_DB
 import tqdm
 from PIL import Image
 
-from nebula3_videoprocessing.videoprocessing.ontology_implementation import SingleOntologyImplementation
-from blip import BLIP_Captioner
-from nebula3_videoprocessing.videoprocessing.yolov7 import YoloTrackerModel
-from nebula3_videoprocessing.videoprocessing.bboxes_implementation import DetectronBBInitter
+import os, sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+from visual_clues.ontology_implementation import SingleOntologyImplementation
+from visual_clues.blip import BLIP_Captioner
+from visual_clues.yolov7_implementation import YoloTrackerModel
+from visual_clues.bboxes_implementation import DetectronBBInitter
 
-
+URL_PREFIX = "http://74.82.29.209:9000"
 
 class TokensPipeline:
     def __init__(self):
@@ -117,8 +119,6 @@ class TokensPipeline:
         """
         Returns a JSON with local tokens for an image url.
         """
-        cv_img = self.load_img_url(img_url, pil_type=False)
-        yolo_bboxes = self.yolo_detector.forward(cv_img)
 
         cv_img = self.load_img_url(img_url, pil_type=False)
         bbox_proposals = self.det_proposal.compute_bbox_proposals(cv_img)
@@ -129,6 +129,20 @@ class TokensPipeline:
         bbox_propsals_attrs = []
 
         local_dict = []
+
+        cv_img = self.load_img_url(img_url, pil_type=False)
+        yolo_output = self.yolo_detector.forward(cv_img)
+
+        for idx, output in enumerate(yolo_output):
+            cur_obj, cur_bbox, cur_conf = output['detection_classes'], output['detections_boxes'], output['detection_scores']
+
+            local_dict.append({
+                'roi_id': str(idx),
+                'bbox': cur_bbox,
+                'bbox_object': cur_obj,
+                'bbox_confidence': cur_conf,
+                'bbox_source': 'yolov7'
+            })
 
         for idx, bbox in enumerate(bbox_proposals['meta_data_det']):
             scaled_bbox = [bbox[0]*bb_rescale_ratio[1], bbox[1]*bb_rescale_ratio[0],
@@ -150,19 +164,17 @@ class TokensPipeline:
 
             img = self.load_img_url(img_url, pil_type=True)
             cropped_image = img.crop((scaled_bbox[0], scaled_bbox[1], scaled_bbox[2], scaled_bbox[3]))
-            processed_frame = self.blip_captioner.process_frame(cropped_image, convert=False)
+            processed_frame = self.blip_captioner.process_frame(cropped_image)
             bbox_caption = self.blip_captioner.generate_caption(processed_frame)
 
             local_dict.append({
-                'roi_id': str(idx),
+                'roi_id': str(idx + len(yolo_output)),
                 'bbox': str(bbox),
                 'bbox_source': 'rpn',
                 'local_captions': {'blip': bbox_caption},
                 'local_objects': {'blip' : scores_obj_sorted_},
                 'local_attributes': {'blip':scores_attr_sorted_},
             })
-
-
         
         
         json_local_tokens = self.create_json_local_tokens(movie_id = "123456", mdf="1", local_dict=local_dict,
@@ -172,22 +184,18 @@ class TokensPipeline:
         return json_local_tokens
 
 
-
-
-
-
     def create_global_tokens(self, img_url):
         """
         Returns a JSON with global tokens for an image url.
         """
-        img = self.load_img_url(img_url, pil_type=True)
+        pil_img = self.load_img_url(img_url, pil_type=True)
 
-        scores_objects = self.compute_scores(self.ontology_objects, img, top_n = 10)
-        scores_persons = self.compute_scores(self.ontology_persons, img, top_n = 10)
-        scores_places = self.compute_scores(self.ontology_places, img, top_n = 10)
+        scores_objects = self.compute_scores(self.ontology_objects, pil_img, top_n = 10)
+        scores_persons = self.compute_scores(self.ontology_persons, pil_img, top_n = 10)
+        scores_places = self.compute_scores(self.ontology_places, pil_img, top_n = 10)
 
-        img = self.load_img_url(img_url, pil_type=True)
-        processed_frame = self.blip_captioner.process_frame(img, convert=False)
+        pil_img = self.load_img_url(img_url, pil_type=True)
+        processed_frame = self.blip_captioner.process_frame(pil_img)
         caption = self.blip_captioner.generate_caption(processed_frame)
 
         json_global_tokens = self.create_json_global_tokens(movie_id = "123456", mdf="1", global_objects=scores_objects,
@@ -196,15 +204,32 @@ class TokensPipeline:
 
         return json_global_tokens
 
-
+    def get_mdf_urls_from_db(self, movie_id):
+        data = self.nre.get_movie(movie_id=movie_id)
+        urls = []
+        if not data:
+            print("{} not found in database. ".format(movie_id))
+            return False
+        if 'mdfs_path' not in data:
+            print("MDFs cannot be found in {}".format(movie_id))
+            return False
+        for mdf_path in data['mdfs_path']:
+            url = os.path.join(URL_PREFIX, mdf_path[1:])
+            urls.append(url)
+        return urls
     
 
-
-
-
-
-
-
+    def run_visual_clues_pipeline(self, movie_id):
+        image_urls = self.get_mdf_urls_from_db(movie_id)
+        length_urls = len(image_urls)
+        for idx, img_url in enumerate(image_urls):
+            glob_tkns_json = self.create_global_tokens(img_url)
+            loc_tkns_json = self.create_local_tokens(img_url)
+            combined_json = self.create_combined_json(glob_tkns_json, loc_tkns_json)
+            self.insert_json_to_db(combined_json)
+            counter = idx + 1
+            print("Finished with {}/{}".format(counter, length_urls))
+        return True, None
 
 
 def main():
@@ -214,7 +239,7 @@ def main():
     loc_tkns_json = tokens_pipeline.create_local_tokens(img_url)
     combined_json = tokens_pipeline.create_combined_json(glob_tkns_json, loc_tkns_json)
     tokens_pipeline.insert_json_to_db(combined_json)
-    a=0
+    print("Done")
 
 
 
