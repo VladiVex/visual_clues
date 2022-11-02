@@ -1,12 +1,12 @@
 import numpy as np
 from database.arangodb import DatabaseConnector
-from config import NEBULA_CONF
+from config.config import NEBULA_CONF
 import cv2
 from pathlib import Path
 import csv
 import requests
 
-from movie_db import MOVIE_DB
+from movie.movie_db import MOVIE_DB
 import tqdm
 from PIL import Image
 
