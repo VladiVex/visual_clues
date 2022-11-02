@@ -23,7 +23,6 @@ jobs:
     outputs:
       repo:
         type: volume
-    uses: git-checkout@v1
     with:
       url: https://github.com/NEBULA3PR0JECT/visual_clues.git
 
