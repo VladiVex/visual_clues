@@ -18,4 +18,3 @@ git+https://github.com/NEBULA3PR0JECT/nebula_vg_driver.git
 fastapi
 seaborn
 transformers==4.15.0
-nebula3_experts==1.2.1

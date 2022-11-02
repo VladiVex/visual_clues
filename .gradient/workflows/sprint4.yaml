@@ -11,13 +11,13 @@
 
 defaults:
   env:
-    PIPELINE_ID: "123456789"
+    PIPELINE_ID: "12345678"
 
 jobs:
     
   # 1. Clone StyleGAN repo into managed storage provider dataset
 
-  cloneStyleGAN2Repo:
+  cloneVisualCluesRepo:
     resources:
       instance-type: C4
     outputs:
@@ -25,7 +25,7 @@ jobs:
         type: volume
     uses: git-checkout@v1
     with:
-      url: https://github.com/NEBULA3PR0JECT/StyleGAN2-test.git
+      url: https://github.com/NEBULA3PR0JECT/visual_clues.git
 
 
   # 2. running jobs
@@ -34,32 +34,17 @@ jobs:
     resources:
       instance-type: C4
     needs:
-      - cloneStyleGAN2Repo
+      - cloneVisualCluesRepo
     inputs:
-      repo: cloneStyleGAN2Repo.outputs.repo
-    # env:
-    #   PIPELINE_ID: '12345678'
+      repo: cloneVisualCluesRepo.outputs.repo
     uses: script@v1
     with:
       script: |-
-        cp -R /inputs/repo /stylegan2
-        cd /stylegan2
+        cp -R /inputs/repo /visual_clues
+        cd /visual_clues
+        pip install -r requirements.txt
+        pip install nebula3_experts==1.2.1
+        python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
         python run_sprint4.py
       image: python:3
 
-  printEnv2:
-    resources:
-      instance-type: C4
-    needs:
-      - cloneStyleGAN2Repo
-    inputs:
-      repo: cloneStyleGAN2Repo.outputs.repo
-    # env:
-    #   PIPELINE_ID: '12345678'
-    uses: script@v1
-    with:
-      script: |-
-        cp -R /inputs/repo /stylegan2
-        cd /stylegan2
-        python run_test.py
-      image: python:3

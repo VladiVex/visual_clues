@@ -23,9 +23,9 @@ def test_pipeline_task(pipeline_id):
     pipeline.handle_pipeline_task(task, pipeline_id, stop_on_failure=True)
 
 def test():
-    # pipeline_id = os.environ.get('PIPELINE_ID')
+    pipeline_id = os.environ.get('PIPELINE_ID')
     # print(pipeline_id)
-    pipeline_id='12345678'
+    # pipeline_id='12345678'
     test_pipeline_task(pipeline_id)
 
 if __name__ == '__main__':
