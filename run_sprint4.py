@@ -14,7 +14,7 @@ def test_pipeline_task(pipeline_id):
 
             output = self.visual_clues_pipeline.run_visual_clues_pipeline(movie_id)
 
-            return
+            return output
         def get_name(self) -> str:
             return "my-task"
 
