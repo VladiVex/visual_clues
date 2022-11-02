@@ -1,5 +1,5 @@
 from experts.pipeline.api import PipelineApi, PipelineTask
-from visual_clues.tokens_pipeline import TokensPipeline
+from visual_clues.run_visual_clues import TokensPipeline
 import os
 from typing import Tuple
 
