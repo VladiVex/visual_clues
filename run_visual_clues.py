@@ -67,10 +67,10 @@ class TokensPipeline:
         self.nre.change_db("prodemo")
         self.db = self.nre.db
 
-        query = 'UPSERT { movie_id: @movie_id } INSERT  \
-                { movie_id: @movie_id, mdf: @mdf, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
+        query = 'UPSERT { movie_id: @movie_id, frame_num: @frame_num } INSERT  \
+                { movie_id: @movie_id, frame_num: @frame_num, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
                             global_persons: @global_persons, global_scenes: @global_scenes, source: @source\
-                        } UPDATE {movie_id: @movie_id, mdf: @mdf, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
+                        } UPDATE {movie_id: @movie_id, frame_num: @frame_num, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
                             global_persons: @global_persons, global_scenes: @global_scenes, \
                             source: @source} IN s4_visual_clues_'
 
@@ -86,7 +86,7 @@ class TokensPipeline:
         """
         json_global_tokens = {
                     "movie_id": movie_id,
-                    "mdf": mdf,
+                    "frame_num": mdf,
                     "global_objects": { 'blip' : global_objects },
                     "global_caption": { 'blip' : global_caption },
                     "global_persons": { 'blip' : global_persons },
@@ -100,7 +100,7 @@ class TokensPipeline:
         
         json_local_tokens = {
             "movie_id": movie_id,
-            "mdf": mdf,
+            "frame_num": mdf,
             "roi": local_dict,
             "url": img_url,
             "source": source
@@ -120,13 +120,13 @@ class TokensPipeline:
         Returns a JSON with local tokens for an image url.
         """
 
-        cv_img = self.load_img_url(img_url, pil_type=False)
-        bbox_proposals = self.det_proposal.compute_bbox_proposals(cv_img)
-        bb_rescale_ratio = [inp/out for out,inp in zip(bbox_proposals['image_size'][:2], cv_img.shape)]
-        pil_img = self.load_img_url(img_url, pil_type=True)
+        # cv_img = self.load_img_url(img_url, pil_type=False)
+        # bbox_proposals = self.det_proposal.compute_bbox_proposals(cv_img)
+        # bb_rescale_ratio = [inp/out for out,inp in zip(bbox_proposals['image_size'][:2], cv_img.shape)]
+        # pil_img = self.load_img_url(img_url, pil_type=True)
 
-        bbox_propsals_objs = []
-        bbox_propsals_attrs = []
+        # bbox_propsals_objs = []
+        # bbox_propsals_attrs = []
 
         local_dict = []
 
@@ -222,6 +222,8 @@ class TokensPipeline:
     def run_visual_clues_pipeline(self, movie_id):
         image_urls = self.get_mdf_urls_from_db(movie_id)
         length_urls = len(image_urls)
+        if length_urls == 0:
+            return False, None
         for idx, img_url in enumerate(image_urls):
             cur_frame_num = int(img_url.split("/")[-1].split(".jpg")[0].replace("frame",""))
             glob_tkns_json = self.create_global_tokens(img_url, movie_id, cur_frame_num)
