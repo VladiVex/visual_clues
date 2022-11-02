@@ -1,4 +1,4 @@
-from nebula3_experts.experts.pipeline.api import PipelineApi, PipelineTask
+from experts.pipeline.api import PipelineApi, PipelineTask
 from visual_clues.tokens_pipeline import TokensPipeline
 import os
 from typing import Tuple
