@@ -1,0 +1,10 @@
+version: "3.3"
+services:
+  places:
+    image: aharonamir/nebula3_experts_image
+    ports:
+      - "48005:8000"
+    environment:
+      ARANGO_DB: "prodemo"
+      ARANGO_HOST: "172.83.9.249"
+#    runtime: nvidia
