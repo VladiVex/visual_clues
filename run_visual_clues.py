@@ -64,7 +64,7 @@ class TokensPipeline:
         Inserts a JSON with global & local tokens to the database.
         """
 
-        self.nre.change_db("nebula_playground")
+        self.nre.change_db("prodemo")
         self.db = self.nre.db
 
         query = 'UPSERT { movie_id: @movie_id } INSERT  \
@@ -72,7 +72,7 @@ class TokensPipeline:
                             global_persons: @global_persons, global_scenes: @global_scenes, source: @source\
                         } UPDATE {movie_id: @movie_id, mdf: @mdf, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
                             global_persons: @global_persons, global_scenes: @global_scenes, \
-                            source: @source} IN s3_pipeline_tokens'
+                            source: @source} IN s4_visual_clues'
 
         self.db.aql.execute(query, bind_vars=combined_json)
         print("Successfully inserted to database.")
