@@ -72,7 +72,7 @@ class TokensPipeline:
                             global_persons: @global_persons, global_scenes: @global_scenes, source: @source\
                         } UPDATE {movie_id: @movie_id, mdf: @mdf, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
                             global_persons: @global_persons, global_scenes: @global_scenes, \
-                            source: @source} IN s4_visual_clues'
+                            source: @source} IN s4_visual_clues_'
 
         self.db.aql.execute(query, bind_vars=combined_json)
         print("Successfully inserted to database.")
@@ -115,7 +115,7 @@ class TokensPipeline:
         return combined_json
     
 
-    def create_local_tokens(self, img_url):
+    def create_local_tokens(self, img_url, movie_id, mdf):
         """
         Returns a JSON with local tokens for an image url.
         """
@@ -144,47 +144,47 @@ class TokensPipeline:
                 'bbox_source': 'yolov7'
             })
 
-        for idx, bbox in enumerate(bbox_proposals['meta_data_det']):
-            scaled_bbox = [bbox[0]*bb_rescale_ratio[1], bbox[1]*bb_rescale_ratio[0],
-                            bbox[2]*bb_rescale_ratio[1], bbox[3]*bb_rescale_ratio[0]]
+        # for idx, bbox in enumerate(bbox_proposals['meta_data_det']):
+        #     scaled_bbox = [bbox[0]*bb_rescale_ratio[1], bbox[1]*bb_rescale_ratio[0],
+        #                     bbox[2]*bb_rescale_ratio[1], bbox[3]*bb_rescale_ratio[0]]
 
-            # Objects on ROI proposals.
-            scores_obj = self.ontology_objects.compute_scores_with_bboxes(pil_img, scaled_bbox)  
-            scores_obj_sorted = sorted(scores_obj, key=lambda x: x[1], reverse=True)
-            scores_obj_sorted_ = [(score[0], str(score[1])) for score in scores_obj_sorted]
+        #     # Objects on ROI proposals.
+        #     scores_obj = self.ontology_objects.compute_scores_with_bboxes(pil_img, scaled_bbox)  
+        #     scores_obj_sorted = sorted(scores_obj, key=lambda x: x[1], reverse=True)
+        #     scores_obj_sorted_ = [(score[0], str(score[1])) for score in scores_obj_sorted]
 
-            bbox_propsals_objs.append({str(scaled_bbox) : scores_obj_sorted_})
+        #     bbox_propsals_objs.append({str(scaled_bbox) : scores_obj_sorted_})
 
-            # Attributes on ROI proposals.
-            scores_obj = self.ontology_attributes.compute_scores_with_bboxes(pil_img, scaled_bbox)  
-            scores_attr_sorted = sorted(scores_obj, key=lambda x: x[1], reverse=True)
-            scores_attr_sorted_ = [(score[0], str(score[1])) for score in scores_attr_sorted]
+        #     # Attributes on ROI proposals.
+        #     scores_obj = self.ontology_attributes.compute_scores_with_bboxes(pil_img, scaled_bbox)  
+        #     scores_attr_sorted = sorted(scores_obj, key=lambda x: x[1], reverse=True)
+        #     scores_attr_sorted_ = [(score[0], str(score[1])) for score in scores_attr_sorted]
             
-            bbox_propsals_attrs.append({str(scaled_bbox) : scores_attr_sorted_})
+        #     bbox_propsals_attrs.append({str(scaled_bbox) : scores_attr_sorted_})
 
-            img = self.load_img_url(img_url, pil_type=True)
-            cropped_image = img.crop((scaled_bbox[0], scaled_bbox[1], scaled_bbox[2], scaled_bbox[3]))
-            processed_frame = self.blip_captioner.process_frame(cropped_image)
-            bbox_caption = self.blip_captioner.generate_caption(processed_frame)
+        #     img = self.load_img_url(img_url, pil_type=True)
+        #     cropped_image = img.crop((scaled_bbox[0], scaled_bbox[1], scaled_bbox[2], scaled_bbox[3]))
+        #     processed_frame = self.blip_captioner.process_frame(cropped_image)
+        #     bbox_caption = self.blip_captioner.generate_caption(processed_frame)
 
-            local_dict.append({
-                'roi_id': str(idx + len(yolo_output)),
-                'bbox': str(bbox),
-                'bbox_source': 'rpn',
-                'local_captions': {'blip': bbox_caption},
-                'local_objects': {'blip' : scores_obj_sorted_},
-                'local_attributes': {'blip':scores_attr_sorted_},
-            })
+        #     local_dict.append({
+        #         'roi_id': str(idx + len(yolo_output)),
+        #         'bbox': str(bbox),
+        #         'bbox_source': 'rpn',
+        #         'local_captions': {'blip': bbox_caption},
+        #         'local_objects': {'blip' : scores_obj_sorted_},
+        #         'local_attributes': {'blip':scores_attr_sorted_},
+        #     })
         
         
-        json_local_tokens = self.create_json_local_tokens(movie_id = "123456", mdf="1", local_dict=local_dict,
+        json_local_tokens = self.create_json_local_tokens(movie_id, mdf, local_dict=local_dict,
                                                             img_url=img_url, source="None")
                                                             
 
         return json_local_tokens
 
 
-    def create_global_tokens(self, img_url):
+    def create_global_tokens(self, img_url, movie_id, frame_num):
         """
         Returns a JSON with global tokens for an image url.
         """
@@ -198,7 +198,7 @@ class TokensPipeline:
         processed_frame = self.blip_captioner.process_frame(pil_img)
         caption = self.blip_captioner.generate_caption(processed_frame)
 
-        json_global_tokens = self.create_json_global_tokens(movie_id = "123456", mdf="1", global_objects=scores_objects,
+        json_global_tokens = self.create_json_global_tokens(movie_id = movie_id, mdf=frame_num, global_objects=scores_objects,
                                                         global_caption=caption, global_persons=scores_persons,
                                                          global_scenes=scores_places, img_url=img_url, source="None")
 
@@ -223,8 +223,9 @@ class TokensPipeline:
         image_urls = self.get_mdf_urls_from_db(movie_id)
         length_urls = len(image_urls)
         for idx, img_url in enumerate(image_urls):
-            glob_tkns_json = self.create_global_tokens(img_url)
-            loc_tkns_json = self.create_local_tokens(img_url)
+            cur_frame_num = int(img_url.split("/")[-1].split(".jpg")[0].replace("frame",""))
+            glob_tkns_json = self.create_global_tokens(img_url, movie_id, cur_frame_num)
+            loc_tkns_json = self.create_local_tokens(img_url, movie_id, cur_frame_num)
             combined_json = self.create_combined_json(glob_tkns_json, loc_tkns_json)
             self.insert_json_to_db(combined_json)
             counter = idx + 1

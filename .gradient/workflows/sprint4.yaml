@@ -19,19 +19,19 @@ jobs:
 
   cloneVisualCluesRepo:
     resources:
-      instance-type: C4
+      instance-type: A6000
     outputs:
       repo:
         type: volume
+    uses: git-checkout@v1
     with:
       url: https://github.com/NEBULA3PR0JECT/visual_clues.git
-
 
   # 2. running jobs
 
   printEnv1:
     resources:
-      instance-type: C4
+      instance-type: A6000
     needs:
       - cloneVisualCluesRepo
     inputs:
@@ -41,9 +41,9 @@ jobs:
       script: |-
         cp -R /inputs/repo /visual_clues
         cd /visual_clues
+        pip install --index-url http://74.82.29.209:8090 nebula3_experts==1.2.2 --trusted-host 74.82.29.209
         pip install -r requirements.txt
-        pip install nebula3_experts==1.2.1
         python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
         python run_sprint4.py
-      image: python:3
+      image: aharonamir/nebula3_experts:base_gpu
 

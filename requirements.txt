@@ -12,9 +12,8 @@ datasets
 rouge_score
 scenedetect
 python-arango
-git+https://github.com/openai/CLIP.git
+clip-by-openai
 spacy-wordnet
-git+https://github.com/NEBULA3PR0JECT/nebula_vg_driver.git
 fastapi
 seaborn
 transformers==4.15.0
