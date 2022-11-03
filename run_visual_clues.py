@@ -72,7 +72,7 @@ class TokensPipeline:
                             global_persons: @global_persons, global_scenes: @global_scenes, source: @source\
                         } UPDATE {movie_id: @movie_id, frame_num: @frame_num, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
                             global_persons: @global_persons, global_scenes: @global_scenes, \
-                            source: @source} IN s4_visual_clues_'
+                            source: @source} IN s4_visual_clues'
 
         self.db.aql.execute(query, bind_vars=combined_json)
         print("Successfully inserted to database.")
