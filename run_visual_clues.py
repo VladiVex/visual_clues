@@ -34,7 +34,7 @@ class TokensPipeline:
         self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip_itc")
         self.ontology_attributes = SingleOntologyImplementation('vg_attributes', vlm_name="blip_itc")
         self.yolo_detector = YoloTrackerModel()
-        self.det_proposal = DetectronBBInitter()
+        # self.det_proposal = DetectronBBInitter()
 
     def load_img_url(self, img_url : str, pil_type=False):
         # Load PIL Image
