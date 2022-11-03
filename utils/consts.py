@@ -1,6 +1,8 @@
 
 import os
-base_path = '/notebooks/visual_clues/visual_token_ontology/vg'
+
+cur_foler = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+base_path = os.path.join(cur_foler,'visual_token_ontology/vg')
 
 object_json_path = os.path.join(base_path, 'openimage_classes_all_cleaned_fictional_characters.json')
 vg_object_json_path = os.path.join(base_path, 'objects_sorted_all.json')
