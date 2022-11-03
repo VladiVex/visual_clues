@@ -14,6 +14,8 @@ def test_pipeline_task(pipeline_id):
 
             output = self.visual_clues_pipeline.run_visual_clues_pipeline(movie_id)
 
+            print("Finished handling movie.")
+            print(output)
             return output
         def get_name(self) -> str:
             return "visual_clues"
