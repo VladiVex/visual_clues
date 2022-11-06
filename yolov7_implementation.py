@@ -36,21 +36,22 @@ class YoloTrackerModel(): # Inherits from TrackerModel ?
         self.img_size = 640
         self.stride = 32
         self.orig_img = None
+        self.weights_path = '/storage/checkpoints/visual_clues/yolov7.pt'
 
     
     def load_model(self):
         # self.confidence = self.config.CONFIDENCE_THRESHOLD
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         half = device.type != 'cpu'
-        checkpoints_name = 'yolov7.pt'
-        cur_dir_path = os.path.dirname(os.path.abspath(__file__))
-        weights = os.path.join(cur_dir_path, checkpoints_name)
-        if not os.path.isfile(weights):
-            synset_url = 'https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7.pt'
-            os.system('wget ' + synset_url)
+        # checkpoints_name = 'yolov7.pt'
+        # cur_dir_path = os.path.dirname(os.path.abspath(__file__))
+        # weights = os.path.join(cur_dir_path, checkpoints_name)
+        # if not os.path.isfile(weights):
+        #     synset_url = 'https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7.pt'
+        #     os.system('wget ' + synset_url)
 
         #"/notebooks/yolov7/yolov7.pt" #
-        model = attempt_load(weights, map_location=device)  # load
+        model = attempt_load(self.weights_path, map_location=device)  # load
         #torch.load(weights, map_location=device)  # load FP32 model
 
         # Convert model to FP16 (faster inference time if GPU is available)
