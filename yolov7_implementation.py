@@ -35,7 +35,7 @@ class YoloTrackerModel(): # Inherits from TrackerModel ?
         self.img_size = 640
         self.stride = 32
         self.orig_img = None
-        self.weights_path = '/storage/checkpoints/visual_clues/yolov7.pt'
+        self.weights_path = '/dataset/yolov7.pt'
         self.model, self.device, self.half, self.names, self.colors = self.load_model()
 
     
