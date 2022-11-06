@@ -32,11 +32,11 @@ class YoloTrackerModel(): # Inherits from TrackerModel ?
     def __init__(self):
         # super().__init__()
         # self.config = TRACKER_CONF()
-        self.model, self.device, self.half, self.names, self.colors = self.load_model()
         self.img_size = 640
         self.stride = 32
         self.orig_img = None
         self.weights_path = '/storage/checkpoints/visual_clues/yolov7.pt'
+        self.model, self.device, self.half, self.names, self.colors = self.load_model()
 
     
     def load_model(self):
