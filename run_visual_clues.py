@@ -220,7 +220,7 @@ class TokensPipeline:
     
     def check_image_url(self, img_url):
         resp = requests.get(img_url, stream=True).raw
-        if not resp:
+        if not resp.reason == 'OK':
             print("Image URL: {} couldn't be loaded succesfully.".format(img_url))
             return False
         return True
@@ -242,6 +242,8 @@ class TokensPipeline:
                 counter = idx + 1
                 print("Finished with {}/{}".format(counter, length_urls))
             else:
+                counter = idx + 1
+                print("Finished with {}/{}".format(counter, length_urls))
                 print("Skipping the invalid image URL: {}".format(img_url))
         return True, None
 
