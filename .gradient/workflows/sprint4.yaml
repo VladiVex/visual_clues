@@ -60,10 +60,12 @@ jobs:
         type: dataset
         with:
           ref: dsmmirqxzfh0xqw
-      
-    outputs:
-      model-id:
-        type: string
+
+      blipitc-checkpoint:
+        type: dataset
+        with:
+          ref: dsrwpne601hnkn4
+          
     uses: script@v1
     with:
       script: |-
