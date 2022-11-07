@@ -9,7 +9,7 @@ class BLIP_Captioner():
 
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth'
+        self.model_url = "/inputs/blipcap-checkpoint"# 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth'
         self.image_size = 384
         self.vit = 'base'
         model = blip_decoder(pretrained=self.model_url, image_size=self.image_size, vit=self.vit)

@@ -11,15 +11,30 @@
 
 defaults:
   env:
-    PIPELINE_ID: "12345678"
+    PIPELINE_ID: "defe975c-d2a5-4777-be3b-4354684b4b33"
 
 jobs:
-    
+
   # 1. Clone StyleGAN repo into managed storage provider dataset
 
+  videoprocessing:
+    resources:
+      instance-type: RTX4000
+    uses: container@v1
+    env:
+      ARANGO_DB: "prodemo"
+      ARANGO_HOST: "172.83.9.249"
+      EXPERT_RUN_MODE: "task"
+    with:
+      image: aharonamir/nebula3_videoprocessing:9ec6a70
+
+      # command: "python videoprocessing/expert/videoprocessing_expert.py"
+  
   cloneVisualCluesRepo:
     resources:
       instance-type: A6000
+    needs:
+      - videoprocessing
     outputs:
       repo:
         type: volume
@@ -29,21 +44,33 @@ jobs:
 
   # 2. running jobs
 
-  printEnv1:
+  VisualCluesTask:
     resources:
       instance-type: A6000
     needs:
       - cloneVisualCluesRepo
     inputs:
       repo: cloneVisualCluesRepo.outputs.repo
+      yolov7-checkpoint:
+        type: dataset
+        with:
+          ref: ds1m8oz23zdvh84
+
+      blipcap-checkpoint:
+        type: dataset
+        with:
+          ref: dsmmirqxzfh0xqw
+      
+    outputs:
+      model-id:
+        type: string
     uses: script@v1
     with:
       script: |-
         cp -R /inputs/repo /visual_clues
         cd /visual_clues
-        pip install --index-url http://74.82.29.209:8090 nebula3_experts==1.2.2 --trusted-host 74.82.29.209
+        pip install --index-url http://74.82.29.209:8090 nebula3_experts==1.2.3 --trusted-host 74.82.29.209
         pip install -r requirements.txt
-        python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
         python run_sprint4.py
-      image: aharonamir/nebula3_experts:base_gpu
+      image: dsivov/nebula3_vidil_env:v02
 
