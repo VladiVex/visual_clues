@@ -20,7 +20,20 @@ class VlmBaseImplementation(VlmInterface):
         image = self.load_image_url(url)
         return self.compute_similarity(image, text)
     
-
+class VlmChunker(VlmBaseImplementation):
+    def __init__(self, vlm: VlmInterface, chunk_size: int = 10):
+        self.chunk_size = chunk_size
+        self.vlm = vlm
+    def load_image_url(self,url):
+        return self.vlm.load_image_url(url)
+    
+    def compute_similarity(self, image: Image, text: list[str]) -> list[float]:
+        results = []
+        chunked_texts=[text[i:i + self.chunk_size] for i in range(0, len(text), self.chunk_size)]
+        for chunk in chunked_texts:
+            results.extend(self.vlm.compute_similarity(image,chunk))
+        return results  
+        
 class VisualGroundingToVlmAdapter(VlmBaseImplementation):
 
     def __init__(self): # vg : VgInterface
@@ -41,11 +54,6 @@ class VisualGroundingToVlmAdapter(VlmBaseImplementation):
                 scores.append(max_conf)
 
         return scores
-
-
-
-
-
 
 class ClipVlmImplementation(VlmBaseImplementation):
 

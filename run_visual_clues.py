@@ -36,12 +36,12 @@ class TokensPipeline:
         self.yolo_detector = YoloTrackerModel()
         # self.det_proposal = DetectronBBInitter()
 
+
     def load_img_url(self, img_url : str, pil_type=False):
         # Load PIL Image
         if pil_type:
-            image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
-            if not image:
-                raise Exception("Image couldn't be loaded successfully.")
+            resp = requests.get(img_url, stream=True).raw
+            image = Image.open(resp).convert('RGB')
         # Load OpenCV Image
         else:
             resp = requests.get(img_url, stream=True).raw
@@ -218,20 +218,31 @@ class TokensPipeline:
             urls.append(url)
         return urls
     
-
+    def check_image_url(self, img_url):
+        resp = requests.get(img_url, stream=True).raw
+        if not resp:
+            print("Image URL: {} couldn't be loaded succesfully.".format(img_url))
+            return False
+        return True
+        
     def run_visual_clues_pipeline(self, movie_id):
         image_urls = self.get_mdf_urls_from_db(movie_id)
         length_urls = len(image_urls)
         if length_urls == 0:
             return False, None
         for idx, img_url in enumerate(image_urls):
-            cur_frame_num = int(img_url.split("/")[-1].split(".jpg")[0].replace("frame",""))
-            glob_tkns_json = self.create_global_tokens(img_url, movie_id, cur_frame_num)
-            loc_tkns_json = self.create_local_tokens(img_url, movie_id, cur_frame_num)
-            combined_json = self.create_combined_json(glob_tkns_json, loc_tkns_json)
-            self.insert_json_to_db(combined_json)
-            counter = idx + 1
-            print("Finished with {}/{}".format(counter, length_urls))
+            print("Working on current image url: {}".format(img_url))
+            img_url_is_valid = self.check_image_url(img_url)
+            if img_url_is_valid:
+                cur_frame_num = int(img_url.split("/")[-1].split(".jpg")[0].replace("frame",""))
+                glob_tkns_json = self.create_global_tokens(img_url, movie_id, cur_frame_num)
+                loc_tkns_json = self.create_local_tokens(img_url, movie_id, cur_frame_num)
+                combined_json = self.create_combined_json(glob_tkns_json, loc_tkns_json)
+                self.insert_json_to_db(combined_json)
+                counter = idx + 1
+                print("Finished with {}/{}".format(counter, length_urls))
+            else:
+                print("Skipping the invalid image URL: {}".format(img_url))
         return True, None
 
 
