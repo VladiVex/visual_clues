@@ -16,3 +16,4 @@ spacy-wordnet==0.1.0
 fastapi==0.85.2
 seaborn==0.12.1
 transformers==4.15.0
+wget==3.2
