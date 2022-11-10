@@ -4,17 +4,32 @@ import torch
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 from visual_clues.models.blip import blip_decoder
+import os
+from pathlib import Path
+import wget
 
 class BLIP_Captioner():
 
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_url = "/inputs/blipcap-checkpoint/model_base_capfilt_large.pth"# 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth'
+        self.model_path = "/inputs/blipcap-checkpoint/model_base_capfilt_large.pth"
+        self.model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth'
         self.image_size = 384
         self.vit = 'base'
-        model = blip_decoder(pretrained=self.model_url, image_size=self.image_size, vit=self.vit)
+        self.create_folder_for_cp()
+        model = blip_decoder(pretrained=self.model_path, image_size=self.image_size, vit=self.vit)
         model.eval()
         self.model = model.to(self.device)
+
+    def create_folder_for_cp(self):
+        """
+            Download the model checkpoint locally to a predefined path.
+        """
+        if not os.path.isfile(self.model_path):
+            dirs_path = "/" + '/'.join(self.model_path.split("/")[1:-1]) + "/"
+            Path(dirs_path).mkdir(parents=True, exist_ok=True)
+            print("Downloading BLIP weights in progres...")
+            wget.download(self.model_url, dirs_path)
 
     def process_frame(self, raw_image):
 

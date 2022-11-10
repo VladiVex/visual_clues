@@ -9,6 +9,9 @@ from transformers import CLIPProcessor, CLIPModel
 from visual_clues.models.blip_itm import blip_itm
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
+import os.path
+import wget
+from pathlib import Path
 
 # from nebula3_experts_vg.vg.visual_grounding_inference import OfaMultiModalVisualGrounding
 # from nebula3_videoprocessing.videoprocessing.owl_vit_impl import OwlVitImplementation
@@ -19,7 +22,7 @@ class VlmBaseImplementation(VlmInterface):
     def compute_similarity_url(self, url: str, text: list[str]):
         image = self.load_image_url(url)
         return self.compute_similarity(image, text)
-    
+
 class VlmChunker(VlmBaseImplementation):
     def __init__(self, vlm: VlmInterface, chunk_size: int = 10):
         self.chunk_size = chunk_size
@@ -33,7 +36,7 @@ class VlmChunker(VlmBaseImplementation):
         for chunk in chunked_texts:
             results.extend(self.vlm.compute_similarity(image,chunk))
         return results  
-        
+
 class VisualGroundingToVlmAdapter(VlmBaseImplementation):
 
     def __init__(self): # vg : VgInterface
@@ -65,7 +68,7 @@ class ClipVlmImplementation(VlmBaseImplementation):
         else:
             print("Initializing model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+        
         self.model = CLIPModel.from_pretrained(config["clip_checkpoints"]).to(device=self.device)
         self.processor = CLIPProcessor.from_pretrained(config["clip_checkpoints"])
 
@@ -90,6 +93,11 @@ class BlipItmVlmImplementation(VlmBaseImplementation):
         else:
             print("Initializing model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        if not os.path.isfile(config['blip_model_url_large']):
+            dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
+            Path(dirs_path).mkdir(parents=True, exist_ok=True)
+            wget.download(config['blip_model_url_large_url'], config['blip_model_url_large'])
 
         model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
         model.eval()
@@ -128,6 +136,11 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         else:
             print("Warning: Initializing BLIP_ITC model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        if not os.path.isfile(config['blip_model_url_large']):
+            dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
+            Path(dirs_path).mkdir(parents=True, exist_ok=True)
+            wget.download(config['blip_model_url_large_url'], dirs_path)
 
         model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
         model.eval()

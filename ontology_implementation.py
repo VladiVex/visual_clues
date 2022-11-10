@@ -10,6 +10,7 @@ import torch
 
 # DUMMY_IMAGE = Image.open(requests.get("http://images.cocodataset.org/val2017/000000039769.jpg", stream=True).raw)
 EMBBDING_BATCH_LIMIT_TEXT = 512
+DIV_TEXT_DENOMINATOR = 10
 
 def get_prefix_prompt_functions():
             attribute_prompt = lambda x: f'A photo of {x}'
@@ -57,7 +58,7 @@ class SingleOntologyImplementation(OntologyInterface):
         texts = self.texts
 
         # If VLM crashes, you can extend 10 to bigger number.
-        div_texts = len(texts) // 20
+        div_texts = len(texts) // DIV_TEXT_DENOMINATOR
         len_texts = len(texts) 
         for i in range(0, len_texts, div_texts):
             if (i + div_texts) > len_texts:
@@ -80,7 +81,7 @@ class SingleOntologyImplementation(OntologyInterface):
         texts = self.texts
 
         # If VLM crashes, you can extend 10 to bigger number.
-        div_texts = len(texts) // 20
+        div_texts = len(texts) // DIV_TEXT_DENOMINATOR
         len_texts = len(texts) 
         for i in range(0, len_texts, div_texts):
             if (i + div_texts) > len_texts:
@@ -130,7 +131,7 @@ class EnsembleOntologyImplementation(OntologyInterface):
             temp_outputs = []
 
             # If VLM crashes, you can extend 10 to bigger number.
-            div_texts = len(self.texts) // 20
+            div_texts = len(self.texts) // DIV_TEXT_DENOMINATOR
             len_texts = len(self.texts) 
             for i in range(0, len_texts, div_texts):
                 if (i + div_texts) > len_texts:
@@ -175,7 +176,7 @@ class AdhocOntologyImplementation(OntologyInterface):
         texts = self.texts
 
         # If VLM crashes, you can extend 10 to bigger number.
-        div_texts = len(texts) // 20
+        div_texts = len(texts) // DIV_TEXT_DENOMINATOR
         len_texts = len(texts) 
         for i in range(0, len_texts, div_texts):
             if (i + div_texts) > len_texts:

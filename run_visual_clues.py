@@ -251,8 +251,8 @@ class TokensPipeline:
 def main():
     tokens_pipeline = TokensPipeline()
     img_url = 'https://cs.stanford.edu/people/rak248/VG_100K/2316634.jpg'
-    glob_tkns_json = tokens_pipeline.create_global_tokens(img_url)
-    loc_tkns_json = tokens_pipeline.create_local_tokens(img_url)
+    glob_tkns_json = tokens_pipeline.create_global_tokens(img_url, movie_id, cur_frame_num)
+    loc_tkns_json = tokens_pipeline.create_local_tokens(img_url, movie_id, cur_frame_num)
     combined_json = tokens_pipeline.create_combined_json(glob_tkns_json, loc_tkns_json)
     tokens_pipeline.insert_json_to_db(combined_json)
     print("Done")
