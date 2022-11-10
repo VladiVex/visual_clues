@@ -95,9 +95,11 @@ class BlipItmVlmImplementation(VlmBaseImplementation):
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         if not os.path.isfile(config['blip_model_url_large']):
+            print("Blip Checkpoints not found locally, Downloading in progres...")
             dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
             Path(dirs_path).mkdir(parents=True, exist_ok=True)
             wget.download(config['blip_model_url_large_url'], config['blip_model_url_large'])
+            print("Successfully downloaded BLIP checkpoints.")
 
         model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
         model.eval()
@@ -138,9 +140,11 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         if not os.path.isfile(config['blip_model_url_large']):
+            print("Blip Checkpoints not found locally, Downloading in progres...")
             dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
             Path(dirs_path).mkdir(parents=True, exist_ok=True)
             wget.download(config['blip_model_url_large_url'], dirs_path)
+            print("Successfully downloaded BLIP checkpoints.")
 
         model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
         model.eval()

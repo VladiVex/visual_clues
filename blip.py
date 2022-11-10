@@ -26,10 +26,11 @@ class BLIP_Captioner():
             Download the model checkpoint locally to a predefined path.
         """
         if not os.path.isfile(self.model_path):
+            print("BLIP Checkpoints not found locally, Downloading in progres...")
             dirs_path = "/" + '/'.join(self.model_path.split("/")[1:-1]) + "/"
             Path(dirs_path).mkdir(parents=True, exist_ok=True)
-            print("Downloading BLIP weights in progres...")
             wget.download(self.model_url, dirs_path)
+            print("Successfully downloaded BLIP checkpoints.")
 
     def process_frame(self, raw_image):
 
