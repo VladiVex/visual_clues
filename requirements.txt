@@ -1,4 +1,4 @@
--e ./fairseq/
+# -e ./fairseq/
 opencv-python
 timm==0.4.12
 fairscale==0.4.4
