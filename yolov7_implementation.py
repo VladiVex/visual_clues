@@ -115,7 +115,8 @@ class YoloTrackerModel(): # Inherits from TrackerModel ?
         """
         
         # Predict
-        pred = self.model(img, augment=False)[0]
+        with torch.no_grad():
+            pred = self.model(img, augment=False)[0]
 
         # Apply NMS
         pred = non_max_suppression(pred)

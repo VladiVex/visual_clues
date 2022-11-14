@@ -79,8 +79,8 @@ class ClipVlmImplementation(VlmBaseImplementation):
     def compute_similarity(self, image : Image, text : list[str]):
 
         inputs = self.processor(text=text, images=image, return_tensors="pt", padding=True).to(device=self.device)
-
-        outputs = self.model(**inputs)
+        with torch.no_grad():
+            outputs = self.model(**inputs)
         embeds_dotproduct = (outputs.image_embeds.expand_as(outputs.text_embeds) * outputs.text_embeds).sum(dim=1)
         return embeds_dotproduct.cpu().detach().numpy()
 
@@ -122,7 +122,8 @@ class BlipItmVlmImplementation(VlmBaseImplementation):
         
         image = self.load_image(image)
 
-        itm_output = self.model(image, text, match_head='itm')
+        with torch.no_grad():
+            itm_output = self.model(image, text, match_head='itm')
         # Change from softmax to dotproduct
         itm_score = torch.nn.functional.softmax(itm_output,dim=1)[:,1]
         itm_scores = itm_score.cpu().detach().numpy()
@@ -166,7 +167,8 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
 
     def compute_similarity(self, image : Image, text : list[str]):
         image = self.load_image(image)
-        itc_output = self.model(image, text, match_head='itc')
+        with torch.no_grad():
+            itc_output = self.model(image, text, match_head='itc')
         # Check if its dotproduct
         itc_scores = itc_output.cpu().detach().numpy()[0]
         return itc_scores
