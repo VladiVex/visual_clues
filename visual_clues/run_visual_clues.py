@@ -30,7 +30,6 @@ class TokensPipeline:
         self.db = self.nre.db
         self.blip_captioner = BLIP_Captioner()
         self.ontology_objects = SingleOntologyImplementation('vg_objects', vlm_name="blip_itc")
-        self.ontology_persons = SingleOntologyImplementation('persons', vlm_name="blip_itc")
         self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip_itc")
         self.ontology_attributes = SingleOntologyImplementation('vg_attributes', vlm_name="blip_itc")
         self.yolo_detector = YoloTrackerModel()
@@ -69,9 +68,9 @@ class TokensPipeline:
 
         query = 'UPSERT { movie_id: @movie_id, frame_num: @frame_num } INSERT  \
                 { movie_id: @movie_id, frame_num: @frame_num, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
-                            global_persons: @global_persons, global_scenes: @global_scenes, source: @source\
+                            global_scenes: @global_scenes, source: @source\
                         } UPDATE {movie_id: @movie_id, frame_num: @frame_num, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
-                            global_persons: @global_persons, global_scenes: @global_scenes, \
+                            global_scenes: @global_scenes, \
                             source: @source} IN s4_visual_clues'
 
         self.db.aql.execute(query, bind_vars=combined_json)
@@ -80,7 +79,7 @@ class TokensPipeline:
         
 
     def create_json_global_tokens(self, movie_id, mdf, global_objects,
-                                    global_caption, global_persons, global_scenes, img_url, source):
+                                    global_caption, global_scenes, img_url, source):
         """
         Returns a JSON filled with global tokens.
         """
@@ -89,7 +88,6 @@ class TokensPipeline:
                     "frame_num": mdf,
                     "global_objects": { 'blip' : global_objects },
                     "global_caption": { 'blip' : global_caption },
-                    "global_persons": { 'blip' : global_persons },
                     "global_scenes":  { 'blip' : global_scenes  },
                     "url": img_url,
                     "source": source
@@ -191,7 +189,6 @@ class TokensPipeline:
         pil_img = self.load_img_url(img_url, pil_type=True)
 
         scores_objects = self.compute_scores(self.ontology_objects, pil_img, top_n = 10)
-        scores_persons = self.compute_scores(self.ontology_persons, pil_img, top_n = 10)
         scores_places = self.compute_scores(self.ontology_places, pil_img, top_n = 10)
 
         pil_img = self.load_img_url(img_url, pil_type=True)
@@ -199,7 +196,7 @@ class TokensPipeline:
         caption = self.blip_captioner.generate_caption(processed_frame)
 
         json_global_tokens = self.create_json_global_tokens(movie_id = movie_id, mdf=frame_num, global_objects=scores_objects,
-                                                        global_caption=caption, global_persons=scores_persons,
+                                                        global_caption=caption,
                                                          global_scenes=scores_places, img_url=img_url, source="None")
 
         return json_global_tokens
