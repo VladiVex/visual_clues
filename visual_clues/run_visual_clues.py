@@ -231,7 +231,10 @@ class TokensPipeline:
             print("Working on current image url: {}".format(img_url))
             img_url_is_valid = self.check_image_url(img_url)
             if img_url_is_valid:
-                cur_frame_num = int(img_url.split("/")[-1].split(".jpg")[0].replace("frame",""))
+                if len(image_urls) == 1:
+                    cur_frame_num = 0
+                else:
+                    cur_frame_num = int(img_url.split("/")[-1].split(".jpg")[0].replace("frame",""))
                 glob_tkns_json = self.create_global_tokens(img_url, movie_id, cur_frame_num)
                 loc_tkns_json = self.create_local_tokens(img_url, movie_id, cur_frame_num)
                 combined_json = self.create_combined_json(glob_tkns_json, loc_tkns_json)
