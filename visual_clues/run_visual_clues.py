@@ -1,12 +1,12 @@
 import numpy as np
-from database.arangodb import DatabaseConnector
-from config.config import NEBULA_CONF
+from database.arangodb import DatabaseConnector, DBBase
+# from config.config import NEBULA_CONF
 import cv2
 from pathlib import Path
 import csv
 import requests
 
-from movie.movie_db import MOVIE_DB
+# from movie.movie_db import MOVIE_DB
 import tqdm
 from PIL import Image
 
@@ -21,13 +21,13 @@ URL_PREFIX = "http://74.82.29.209:9000"
 
 class TokensPipeline:
     def __init__(self):
-        self.config_db = NEBULA_CONF()
-        self.db_host = self.config_db.get_database_host()
-        self.database = self.config_db.get_playground_name()
-        self.gdb = DatabaseConnector()
-        self.db = self.gdb.connect_db(self.database)
-        self.nre = MOVIE_DB()
-        self.db = self.nre.db
+        # self.config_db = NEBULA_CONF()
+        # self.db_host = self.config_db.get_database_host()
+        # self.database = self.config_db.get_playground_name()
+        # self.gdb = DatabaseConnector()
+        # self.db = self.gdb.connect_db(self.database)
+        self.nre = DBBase()
+        # self.db = self.nre.db
         self.blip_captioner = BLIP_Captioner()
         self.ontology_objects = SingleOntologyImplementation('vg_objects', vlm_name="blip_itc")
         self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip_itc")
@@ -58,24 +58,15 @@ class TokensPipeline:
         scores = sorted_scores_[:top_n]
         return scores
 
-    def insert_json_to_db(self, combined_json, db_name="nebula_playground"):
+    def insert_json_to_db(self, combined_json, collection_name):
         """
         Inserts a JSON with global & local tokens to the database.
         """
 
-        self.nre.change_db("prodemo")
-        self.db = self.nre.db
+        res = self.nre.write_doc_by_key(combined_json, collection_name, overwrite=True, key_list=['movie_id', 'frame_num'])
 
-        query = 'UPSERT { movie_id: @movie_id, frame_num: @frame_num } INSERT  \
-                { movie_id: @movie_id, frame_num: @frame_num, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
-                            global_scenes: @global_scenes, source: @source\
-                        } UPDATE {movie_id: @movie_id, frame_num: @frame_num, roi: @roi, url: @url, global_objects: @global_objects, global_caption: @global_caption,\
-                            global_scenes: @global_scenes, \
-                            source: @source} IN s4_visual_clues'
-
-        self.db.aql.execute(query, bind_vars=combined_json)
         print("Successfully inserted to database.")
-        return
+        return res
         
 
     def create_json_global_tokens(self, movie_id, mdf, global_objects,
@@ -201,10 +192,9 @@ class TokensPipeline:
 
         return json_global_tokens
 
-    def get_mdf_urls_from_db(self, movie_id):
-        print("Trying to get movie {} from db:".format(movie_id))
-        print(self.nre.db)
-        data = self.nre.get_movie(movie_id=movie_id)
+    def get_mdf_urls_from_db(self, movie_id, collection):
+
+        data = self.nre.get_doc_by_key({'_id': movie_id}, "Movies")
         urls = []
         if not data:
             print("{} not found in database. ".format(movie_id))
