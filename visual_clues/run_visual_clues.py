@@ -202,6 +202,8 @@ class TokensPipeline:
         return json_global_tokens
 
     def get_mdf_urls_from_db(self, movie_id):
+        print("Trying to get movie {} from db:".format(movie_id))
+        print(self.nre.db)
         data = self.nre.get_movie(movie_id=movie_id)
         urls = []
         if not data:
