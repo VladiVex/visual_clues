@@ -27,6 +27,7 @@ class TokensPipeline:
         # self.gdb = DatabaseConnector()
         # self.db = self.gdb.connect_db(self.database)
         self.nre = DBBase()
+        self.collection_name = "s4_visual_clues"
         # self.db = self.nre.db
         self.blip_captioner = BLIP_Captioner()
         self.ontology_objects = SingleOntologyImplementation('vg_objects', vlm_name="blip_itc")
@@ -215,7 +216,7 @@ class TokensPipeline:
         return True
         
     def run_visual_clues_pipeline(self, movie_id):
-        image_urls = self.get_mdf_urls_from_db(movie_id)
+        image_urls = self.get_mdf_urls_from_db(movie_id, "Movies")
         length_urls = len(image_urls)
         if length_urls == 0:
             return False, None
@@ -230,7 +231,7 @@ class TokensPipeline:
                 glob_tkns_json = self.create_global_tokens(img_url, movie_id, cur_frame_num)
                 loc_tkns_json = self.create_local_tokens(img_url, movie_id, cur_frame_num)
                 combined_json = self.create_combined_json(glob_tkns_json, loc_tkns_json)
-                self.insert_json_to_db(combined_json)
+                self.insert_json_to_db(combined_json, self.collection_name)
                 counter = idx + 1
                 print("Finished with {}/{}".format(counter, length_urls))
             else:
@@ -247,7 +248,7 @@ def main():
     glob_tkns_json = tokens_pipeline.create_global_tokens(img_url, movie_id, cur_frame_num)
     loc_tkns_json = tokens_pipeline.create_local_tokens(img_url, movie_id, cur_frame_num)
     combined_json = tokens_pipeline.create_combined_json(glob_tkns_json, loc_tkns_json)
-    tokens_pipeline.insert_json_to_db(combined_json)
+    tokens_pipeline.insert_json_to_db(combined_json, self.collection_name)
     print("Done")
 
 
