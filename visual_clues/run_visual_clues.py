@@ -216,7 +216,7 @@ class TokensPipeline:
         return True
         
     def run_visual_clues_pipeline(self, movie_id):
-        image_urls = self.get_mdf_urls_from_db(movie_id, "Movies")
+        image_urls = self.get_mdf_urls_from_db(movie_id)
         length_urls = len(image_urls)
         if length_urls == 0:
             return False, None
