@@ -248,7 +248,7 @@ def main():
     glob_tkns_json = tokens_pipeline.create_global_tokens(img_url, movie_id, cur_frame_num)
     loc_tkns_json = tokens_pipeline.create_local_tokens(img_url, movie_id, cur_frame_num)
     combined_json = tokens_pipeline.create_combined_json(glob_tkns_json, loc_tkns_json)
-    tokens_pipeline.insert_json_to_db(combined_json, self.collection_name)
+    tokens_pipeline.insert_json_to_db(combined_json, tokens_pipeline.collection_name)
     print("Done")
 
 
