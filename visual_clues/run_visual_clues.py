@@ -192,7 +192,7 @@ class TokensPipeline:
 
         return json_global_tokens
 
-    def get_mdf_urls_from_db(self, movie_id, collection):
+    def get_mdf_urls_from_db(self, movie_id):
 
         data = self.nre.get_doc_by_key({'_id': movie_id}, "Movies")
         urls = []
