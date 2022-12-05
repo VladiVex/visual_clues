@@ -12,10 +12,29 @@ from torchvision.transforms.functional import InterpolationMode
 import os.path
 import wget
 from pathlib import Path
+from functools import lru_cache, wraps
+from time import sleep
+import io
+import torch.nn.functional as F
 
 # from nebula3_experts_vg.vg.visual_grounding_inference import OfaMultiModalVisualGrounding
 # from nebula3_videoprocessing.videoprocessing.owl_vit_impl import OwlVitImplementation
 
+def np_cache(function):
+    @lru_cache()
+    def cached_wrapper(hashable_array):
+        array = np.array(hashable_array)
+        return function(array)
+
+    @wraps(function)
+    def wrapper(array):
+        return cached_wrapper(tuple(array))
+
+    # copy lru_cache attributes over too
+    wrapper.cache_info = cached_wrapper.cache_info
+    wrapper.cache_clear = cached_wrapper.cache_clear
+
+    return wrapper
 
 class VlmBaseImplementation(VlmInterface):
 
@@ -150,6 +169,8 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
         model.eval()
         self.model = model.to(device=self.device)
+        # self.img_embeddings = {}
+        # self.text_embeddings = {}
     
     def load_image_url(self, url: str):
         image = Image.open(requests.get(url, stream=True).raw).convert('RGB') 
@@ -172,6 +193,37 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         # Check if its dotproduct
         itc_scores = itc_output.cpu().detach().numpy()[0]
         return itc_scores
+
+    @lru_cache()
+    def get_cached_image_feat(self, img_byte_arr):
+        img = img_byte_arr.getvalue()
+        image = Image.open(io.BytesIO(img))
+        image = self.load_image(image)
+        image_embeds = self.model.visual_encoder(image) 
+        image_feat = F.normalize(self.model.vision_proj(image_embeds[:,0,:]),dim=-1)
+
+        return image_feat
+    
+    @lru_cache()
+    def get_cached_text_feat(self, txt: tuple):
+        txt = list(txt)
+        text = self.model.tokenizer(txt, padding='max_length', truncation=True, max_length=35, 
+                              return_tensors="pt").to(self.device) 
+        text_output = self.model.text_encoder(text.input_ids, attention_mask = text.attention_mask,                      
+                                            return_dict = True, mode = 'text')  
+        text_feat = F.normalize(self.model.text_proj(text_output.last_hidden_state[:,0,:]),dim=-1)                                    
+        return text_feat
+
+    def compute_cached_similarity(self, image: Image, text: list[str]):
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='JPEG')
+        with torch.no_grad():
+            image_feat = self.get_cached_image_feat(img_byte_arr)
+            text_feat = self.get_cached_text_feat(tuple(text))
+            sim = image_feat @ text_feat.t()
+        sim = sim.cpu().detach().numpy()[0]
+        return sim
+
     
     # def bbox_xywh_to_xyxy(self, xywh):
     #     w, h = np.maximum(xywh[2] - 1, 0), np.maximum(xywh[3] - 1, 0)
