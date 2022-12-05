@@ -9,12 +9,15 @@ import requests
 # from movie.movie_db import MOVIE_DB
 import tqdm
 from PIL import Image
+import time
 
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 from visual_clues.ontology_implementation import SingleOntologyImplementation
 from visual_clues.blip import BLIP_Captioner
 from visual_clues.yolov7_implementation import YoloTrackerModel
+from visual_clues.visual_clues.vlm_implementation import BlipItcVlmImplementation
+
 # from visual_clues.bboxes_implementation import DetectronBBInitter
 
 URL_PREFIX = "http://74.82.29.209:9000"
@@ -34,6 +37,7 @@ class TokensPipeline:
         self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip_itc")
         self.ontology_attributes = SingleOntologyImplementation('vg_attributes', vlm_name="blip_itc")
         self.yolo_detector = YoloTrackerModel()
+        self.blip_itc = BlipItcVlmImplementation()
         # self.det_proposal = DetectronBBInitter()
 
 
@@ -109,7 +113,7 @@ class TokensPipeline:
         """
         Returns a JSON with local tokens for an image url.
         """
-
+        start_time = time.time()
         # cv_img = self.load_img_url(img_url, pil_type=False)
         # bbox_proposals = self.det_proposal.compute_bbox_proposals(cv_img)
         # bb_rescale_ratio = [inp/out for out,inp in zip(bbox_proposals['image_size'][:2], cv_img.shape)]
@@ -170,7 +174,8 @@ class TokensPipeline:
         json_local_tokens = self.create_json_local_tokens(movie_id, mdf, local_dict=local_dict,
                                                             img_url=img_url, source="None")
                                                             
-
+        end_time = time.time() - start_time
+        print("Create local tokens time: {}".format(end_time))
         return json_local_tokens
 
 
@@ -178,6 +183,7 @@ class TokensPipeline:
         """
         Returns a JSON with global tokens for an image url.
         """
+        start_time = time.time()
         pil_img = self.load_img_url(img_url, pil_type=True)
 
         scores_objects = self.compute_scores(self.ontology_objects, pil_img, top_n = 10)
@@ -188,12 +194,13 @@ class TokensPipeline:
         caption = self.blip_captioner.generate_caption(processed_frame)
 
         json_global_tokens = self.create_json_global_tokens(movie_id = movie_id, mdf=frame_num, global_objects=scores_objects,
-                                                        global_caption=caption,
-                                                         global_scenes=scores_places, img_url=img_url, source="None")
-
+                                                            global_caption=caption,
+                                                            global_scenes=scores_places, img_url=img_url, source="None")
+        end_time = time.time() - start_time
+        print("Create global tokens time: {}".format(end_time))
         return json_global_tokens
 
-    def get_mdf_urls_from_db(self, movie_id):
+    def get_mdf_urls_from_db(self, movie_id, collection):
 
         data = self.nre.get_doc_by_key({'_id': movie_id}, "Movies")
         urls = []
@@ -216,7 +223,9 @@ class TokensPipeline:
         return True
         
     def run_visual_clues_pipeline(self, movie_id):
-        image_urls = self.get_mdf_urls_from_db(movie_id)
+        print("Starting to record time of visual clues!")
+        start_time = time.time()
+        image_urls = self.get_mdf_urls_from_db(movie_id, "Movies")
         length_urls = len(image_urls)
         if length_urls == 0:
             return False, None
@@ -238,13 +247,15 @@ class TokensPipeline:
                 counter = idx + 1
                 print("Finished with {}/{}".format(counter, length_urls))
                 print("Skipping the invalid image URL: {}".format(img_url))
+        end_time = time.time() - start_time
+        print("Total time it took for visual clues: {}".format(end_time))
         return True, None
 
 
 def main():
     tokens_pipeline = TokensPipeline()
     img_url = 'https://cs.stanford.edu/people/rak248/VG_100K/2316634.jpg'
-    movie_id, cur_frame_num = "test", "1"
+    movie_id, cur_frame_num = "test1", "1"
     glob_tkns_json = tokens_pipeline.create_global_tokens(img_url, movie_id, cur_frame_num)
     loc_tkns_json = tokens_pipeline.create_local_tokens(img_url, movie_id, cur_frame_num)
     combined_json = tokens_pipeline.create_combined_json(glob_tkns_json, loc_tkns_json)
