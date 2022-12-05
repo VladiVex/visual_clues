@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardi
 from visual_clues.ontology_implementation import SingleOntologyImplementation
 from visual_clues.blip import BLIP_Captioner
 from visual_clues.yolov7_implementation import YoloTrackerModel
-from visual_clues.visual_clues.vlm_implementation import BlipItcVlmImplementation
+from visual_clues.vlm_implementation import BlipItcVlmImplementation
 
 # from visual_clues.bboxes_implementation import DetectronBBInitter
 
