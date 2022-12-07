@@ -166,11 +166,12 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             wget.download(config['blip_model_url_large_url'], dirs_path)
             print("Successfully downloaded BLIP checkpoints.")
 
+        self.half = True if self.device != 'cpu' else False
         model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
         model.eval()
         self.model = model.to(device=self.device)
-        # self.img_embeddings = {}
-        # self.text_embeddings = {}
+        self.model = model.half() if self.half else self.model
+
     
     def load_image_url(self, url: str):
         image = Image.open(requests.get(url, stream=True).raw).convert('RGB') 
@@ -183,7 +184,10 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             transforms.ToTensor(),
             transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
             ]) 
-        image = transform(image).unsqueeze(0).to(self.device)   
+        if self.half:
+            image = transform(image).half().unsqueeze(0).to(self.device)  
+        else:
+            image = transform(image).unsqueeze(0).to(self.device)
         return image
 
     def compute_similarity(self, image : Image, text : list[str]):
