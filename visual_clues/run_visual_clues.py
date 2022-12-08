@@ -71,7 +71,7 @@ class TokensPipeline:
 
         res = self.nre.write_doc_by_key(combined_json, collection_name, overwrite=True, key_list=['movie_id', 'frame_num'])
 
-        print("Successfully inserted to database. Collection name: {}".format(collection_name))
+        print("Successfully inserted to database. Collection name: {}, movie_id: {}".format(collection_name, combined_json['movie_id']))
         return res
         
 
