@@ -30,6 +30,7 @@ class TokensPipeline:
         # self.gdb = DatabaseConnector()
         # self.db = self.gdb.connect_db(self.database)
         self.nre = DBBase()
+        print("Connected to database: {}".format(self.nre.database))
         self.collection_name = "s4_visual_clues"
         # self.db = self.nre.db
         self.blip_captioner = BLIP_Captioner()
@@ -70,7 +71,7 @@ class TokensPipeline:
 
         res = self.nre.write_doc_by_key(combined_json, collection_name, overwrite=True, key_list=['movie_id', 'frame_num'])
 
-        print("Successfully inserted to database.")
+        print("Successfully inserted to database. Collection name: {}".format(collection_name))
         return res
         
 
@@ -253,14 +254,16 @@ class TokensPipeline:
 
 
 def main():
+    start_time = time.time()
     tokens_pipeline = TokensPipeline()
     img_url = 'https://cs.stanford.edu/people/rak248/VG_100K/2316634.jpg'
-    movie_id, cur_frame_num = "test1", "1"
+    movie_id, cur_frame_num = "test1", "2"
     glob_tkns_json = tokens_pipeline.create_global_tokens(img_url, movie_id, cur_frame_num)
     loc_tkns_json = tokens_pipeline.create_local_tokens(img_url, movie_id, cur_frame_num)
     combined_json = tokens_pipeline.create_combined_json(glob_tkns_json, loc_tkns_json)
     tokens_pipeline.insert_json_to_db(combined_json, tokens_pipeline.collection_name)
-    print("Done")
+    end_time = time.time() - start_time
+    print("Total time it took for visual clues: {}".format(end_time))
 
 
 
