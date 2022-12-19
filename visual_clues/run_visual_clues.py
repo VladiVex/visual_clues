@@ -203,7 +203,7 @@ class TokensPipeline:
 
     def get_mdf_urls_from_db(self, movie_id, collection):
 
-        data = self.nre.get_doc_by_key({'_id': movie_id}, "Movies")
+        data = self.nre.get_doc_by_key({'_id': movie_id}, collection)
         urls = []
         if not data:
             print("{} not found in database. ".format(movie_id))
@@ -216,6 +216,26 @@ class TokensPipeline:
             urls.append(url)
         return urls
     
+    def get_pipelineid_from_db(self, movie_id, collection):
+
+        data = self.nre.get_doc_by_key({'_id': movie_id}, collection)
+        if not data:
+            print("{} not found in database. ".format(movie_id))
+            return False
+        if 'pipeline_id' not in data:
+            print("pipeline_id cannot be found in {}".format(movie_id))
+            return False
+        pipeline_id = data['pipeline_id']
+
+        return pipeline_id
+
+    def get_input_type_from_db(self, pipeline_id, collection):
+
+        pipeline_data = self.nre.get_doc_by_key({'_key': pipeline_id}, collection)
+        if pipeline_data:
+            input_type = pipeline_data["inputs"]["videoprocessing"]["movies"][0]["type"]
+        return input_type
+    
     def check_image_url(self, img_url):
         resp = requests.get(img_url, stream=True).raw
         if not resp.reason == 'OK':
@@ -227,6 +247,8 @@ class TokensPipeline:
         print("Starting to record time of visual clues!")
         start_time = time.time()
         image_urls = self.get_mdf_urls_from_db(movie_id, "Movies")
+        pipeline_id = self.get_pipelineid_from_db(movie_id, "Movies")
+        input_type = self.get_input_type_from_db(pipeline_id, "pipelines")
         length_urls = len(image_urls)
         if length_urls == 0:
             return False, None
@@ -234,7 +256,7 @@ class TokensPipeline:
             print("Working on current image url: {}".format(img_url))
             img_url_is_valid = self.check_image_url(img_url)
             if img_url_is_valid:
-                if len(image_urls) == 1:
+                if len(image_urls) == 1 and input_type == "image":
                     cur_frame_num = 0
                 else:
                     cur_frame_num = int(img_url.split("/")[-1].split(".jpg")[0].replace("frame",""))
