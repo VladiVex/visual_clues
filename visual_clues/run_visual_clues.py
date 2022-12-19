@@ -233,7 +233,10 @@ class TokensPipeline:
 
         pipeline_data = self.nre.get_doc_by_key({'_key': pipeline_id}, collection)
         if pipeline_data:
-            input_type = pipeline_data["inputs"]["videoprocessing"]["movies"][0]["type"]
+            if "dataset" in pipeline_data["inputs"]["videoprocessing"]:
+                input_type = pipeline_data["inputs"]["videoprocessing"]["dataset"]["type"]
+            else:
+                input_type = pipeline_data["inputs"]["videoprocessing"]["movies"][0]["type"]
         return input_type
     
     def check_image_url(self, img_url):
