@@ -272,7 +272,8 @@ class TokensPipeline:
             else:
                 counter = idx + 1
                 print("Finished with {}/{}".format(counter, length_urls))
-                print("Skipping the invalid image URL: {}".format(img_url))
+                print("Error!!! invalid image URL: {}".format(img_url))
+                return False, None
         end_time = time.time() - start_time
         print("Total time it took for visual clues: {}".format(end_time))
         return True, None
