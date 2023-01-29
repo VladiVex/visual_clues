@@ -64,11 +64,11 @@ class SingleOntologyImplementation(OntologyInterface):
             if (i + div_texts) > len_texts:
                 scores = self.vlm.compute_cached_similarity(image, texts[i:i + (len_texts - i)])
                 for j, score in enumerate(scores):
-                    outputs.append((self.ontology[i + j], score))
+                    outputs.append((self.ontology[i + j], float(score)))
             else:
                 scores = self.vlm.compute_cached_similarity(image, texts[i:i + div_texts])
                 for j, score in enumerate(scores):
-                    outputs.append((self.ontology[i + j], score))
+                    outputs.append((self.ontology[i + j], float(score)))
         
         # scores = self.vlm.compute_cached_similarity(image, texts)
         # for i, score in enumerate(scores):
@@ -186,11 +186,11 @@ class AdhocOntologyImplementation(OntologyInterface):
             if (i + div_texts) > len_texts:
                 scores = self.vlm.compute_similarity(image, texts[i:i + (len_texts - i)])
                 for j, score in enumerate(scores):
-                    outputs.append((self.ontology[i + j], score))
+                    outputs.append((self.ontology[i + j], float(score)))
             else:
                 scores = self.vlm.compute_similarity(image, texts[i:i + div_texts])
                 for j, score in enumerate(scores):
-                    outputs.append((self.ontology[i + j], score))
+                    outputs.append((self.ontology[i + j], float(score)))
         
         # outputs.sort(key=lambda a: a[1], reverse=True)
         # print(f"Top 5: {outputs[:5]}")
