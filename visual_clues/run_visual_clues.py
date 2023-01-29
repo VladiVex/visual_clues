@@ -60,7 +60,7 @@ class TokensPipeline:
         """
         ontology_scores = ontology.compute_scores(img)
         sorted_scores = sorted(ontology_scores, key=lambda x: x[1], reverse=True)
-        sorted_scores_ = [(score[0], str(score[1])) for score in sorted_scores]
+        sorted_scores_ = [(score[0], float(score[1])) for score in sorted_scores]
         scores = sorted_scores_[:top_n]
         return scores
 
@@ -135,7 +135,7 @@ class TokensPipeline:
                 'roi_id': int(idx),
                 'bbox': cur_bbox,
                 'bbox_object': cur_obj,
-                'bbox_confidence': float(cur_conf),
+                'bbox_confidence': int(cur_conf),
                 'bbox_source': 'yolov7'
             })
 
