@@ -135,7 +135,7 @@ class TokensPipeline:
                 'roi_id': int(idx),
                 'bbox': cur_bbox,
                 'bbox_object': cur_obj,
-                'bbox_confidence': int(cur_conf),
+                'bbox_confidence': float(cur_conf),
                 'bbox_source': 'yolov7'
             })
 
