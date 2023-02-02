@@ -22,7 +22,7 @@ from timm.models.hub import download_cached_file
 
 class BLIP_Base(nn.Module):
     def __init__(self,                 
-                 med_config = 'configs/med_config.json',  
+                 med_config = '/notebooks/visual_clues/visual_clues/models/med_config.json',  
                  image_size = 224,
                  vit = 'base',
                  vit_grad_ckpt = False,
@@ -77,7 +77,7 @@ class BLIP_Base(nn.Module):
         
 class BLIP_Decoder(nn.Module):
     def __init__(self,                 
-                 med_config = 'configs/med_config.json',  
+                 med_config = '/notebooks/visual_clues/visual_clues/models/med_config.json',  
                  image_size = 384,
                  vit = 'base',
                  vit_grad_ckpt = False,
