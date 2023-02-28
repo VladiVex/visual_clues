@@ -178,7 +178,7 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         # model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
         # model.eval()
 
-        set_dir('/inputs/blip2-checkpoints')
+        set_dir('/inputs')
 
         self.model, self.vis_processors, self.text_processors = load_model_and_preprocess("blip2_feature_extractor", "pretrain", device=self.device, is_eval=True)
         self.model = self.model.float()
