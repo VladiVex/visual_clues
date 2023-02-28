@@ -265,7 +265,10 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             image_feat = self.get_cached_image_feat(img_byte_arr)
             t1 = time.time()
             for cur_text in text:
-                text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
+                if cur_text in ontology_names_to_all_embeddings:
+                    text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
+                else:
+                    text_feat = self.get_cached_text_feat(cur_text)
                 itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
         print("Time took: {}".format(time.time() - t1))   
         # sim = itc_scores.cpu().detach().numpy()[0]
