@@ -181,6 +181,7 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         set_dir('/inputs/blip2-checkpoints')
 
         self.model, self.vis_processors, self.text_processors = load_model_and_preprocess("blip2_feature_extractor", "pretrain", device=self.device, is_eval=True)
+        self.model = self.model.float()
         blip2_names_to_obj_embeddings = self.read_data(vg_objects_path)
         self.blip2_names_to_obj_embeddings = {blip2_names_to_obj_embeddings[i][0]: blip2_names_to_obj_embeddings[i][1] for i in range(0, len(blip2_names_to_obj_embeddings))}
 
