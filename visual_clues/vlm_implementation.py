@@ -16,7 +16,15 @@ from functools import lru_cache, wraps
 from time import sleep
 import io
 import torch.nn.functional as F
-
+from lavis.models import load_model_and_preprocess
+import time
+import pickle
+from torch.hub import set_dir
+BLIP2_EMBEDDINGS_FOLDER = "blip2_embeddings"
+DIR_PATH = os.path.dirname(__file__)
+vg_objects_path = os.path.join(os.path.join(DIR_PATH, BLIP2_EMBEDDINGS_FOLDER), "blip2_vg_objects.pkl")
+vg_atts_path = os.path.join(os.path.join(DIR_PATH, BLIP2_EMBEDDINGS_FOLDER), "blip2_vg_atts.pkl")
+vg_places_path = os.path.join(os.path.join(DIR_PATH, BLIP2_EMBEDDINGS_FOLDER), "blip2_vg_places.pkl")
 # from nebula3_experts_vg.vg.visual_grounding_inference import OfaMultiModalVisualGrounding
 # from nebula3_videoprocessing.videoprocessing.owl_vit_impl import OwlVitImplementation
 
@@ -159,74 +167,108 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             print("Warning: Initializing BLIP_ITC model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        if not os.path.isfile(config['blip_model_url_large']):
-            print("Blip Checkpoints not found locally, Downloading in progres...")
-            dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
-            Path(dirs_path).mkdir(parents=True, exist_ok=True)
-            wget.download(config['blip_model_url_large_url'], dirs_path)
-            print("Successfully downloaded BLIP checkpoints.")
+        # if not os.path.isfile(config['blip_model_url_large']):
+        #     print("Blip Checkpoints not found locally, Downloading in progres...")
+        #     dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
+        #     Path(dirs_path).mkdir(parents=True, exist_ok=True)
+        #     wget.download(config['blip_model_url_large_url'], dirs_path)
+        #     print("Successfully downloaded BLIP checkpoints.")
 
-        self.half = True if self.device != 'cpu' else False
-        model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
-        model.eval()
-        self.model = model.to(device=self.device)
-        self.model = model.half() if self.half else self.model
+        # self.half = True if self.device != 'cpu' else False
+        # model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
+        # model.eval()
 
-    
+        set_dir('/inputs/blip2-checkpoints')
+
+        self.model, self.vis_processors, self.text_processors = load_model_and_preprocess("blip2_feature_extractor", "pretrain", device=self.device, is_eval=True)
+        blip2_names_to_obj_embeddings = self.read_data(vg_objects_path)
+        self.blip2_names_to_obj_embeddings = {blip2_names_to_obj_embeddings[i][0]: blip2_names_to_obj_embeddings[i][1] for i in range(0, len(blip2_names_to_obj_embeddings))}
+
+        blip2_names_to_att_embeddings = self.read_data(vg_atts_path)
+        self.blip2_names_to_att_embeddings = {blip2_names_to_att_embeddings[i][0]: blip2_names_to_att_embeddings[i][1] for i in range(0, len(blip2_names_to_att_embeddings))}
+
+        blip2_names_to_places_embeddings = self.read_data(vg_places_path)
+        self.blip2_names_to_places_embeddings = {blip2_names_to_places_embeddings[i][0]: blip2_names_to_places_embeddings[i][1] for i in range(0, len(blip2_names_to_places_embeddings))}
+        
+        self.ontology_names_to_all_embeddings = {}
+        self.ontology_names_to_all_embeddings.update(self.blip2_names_to_obj_embeddings)
+        self.ontology_names_to_all_embeddings.update(self.blip2_names_to_att_embeddings)
+        self.ontology_names_to_all_embeddings.update(self.blip2_names_to_places_embeddings)
+        # self.model = model.to(device=self.device)
+        # self.model = model.half() if self.half else self.model
+
+    def read_data(self, path, mode="pickle"):
+        if mode == "pickle":
+            with open(path, "rb") as f:
+                data = pickle.load(f)
+                return data
+
     def load_image_url(self, url: str):
         image = Image.open(requests.get(url, stream=True).raw).convert('RGB') 
         return image
 
-    def load_image(self, image):   
+    def load_image(self, image : Image):   
         
-        transform = transforms.Compose([
-            transforms.Resize((config['blip_image_size'], config['blip_image_size']),interpolation=InterpolationMode.BICUBIC),
-            transforms.ToTensor(),
-            transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
-            ]) 
-        if self.half:
-            image = transform(image).half().unsqueeze(0).to(self.device)  
-        else:
-            image = transform(image).unsqueeze(0).to(self.device)
+        # transform = transforms.Compose([
+        #     transforms.Resize((config['blip_image_size'], config['blip_image_size']),interpolation=InterpolationMode.BICUBIC),
+        #     transforms.ToTensor(),
+        #     transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
+        #     ]) 
+        # if self.half:
+        #     image = transform(image).half().unsqueeze(0).to(self.device)  
+        # else:
+        #     image = transform(image).unsqueeze(0).to(self.device)
+        image = self.vis_processors["eval"](image).unsqueeze(0).to(self.device)
+        image = self.model.extract_features({"image": image}, mode="image")
+        image = image.image_embeds_proj
         return image
 
     def compute_similarity(self, image : Image, text : list[str]):
         image = self.load_image(image)
+        # text = self.text_processors["eval"](text)
         with torch.no_grad():
-            itc_output = self.model(image, text, match_head='itc')
+            itc_scores = self.model({"image": image, "text_input": text}, match_head='itc')
         # Check if its dotproduct
-        itc_scores = itc_output.cpu().detach().numpy()[0]
+        #itc_scores = itc_output.cpu().detach().numpy()[0]
         return itc_scores
 
     @lru_cache()
     def get_cached_image_feat(self, img_byte_arr):
         img = img_byte_arr.getvalue()
         image = Image.open(io.BytesIO(img))
-        image = self.load_image(image)
-        image_embeds = self.model.visual_encoder(image) 
-        image_feat = F.normalize(self.model.vision_proj(image_embeds[:,0,:]),dim=-1)
+        image_feat = self.load_image(image)
+        # image_embeds = self.model.visual_encoder(image) 
+        # image_feat = F.normalize(self.model.vision_proj(image_embeds[:,0,:]),dim=-1)
 
         return image_feat
     
     @lru_cache()
-    def get_cached_text_feat(self, txt: tuple):
-        txt = list(txt)
-        text = self.model.tokenizer(txt, padding='max_length', truncation=True, max_length=35, 
-                              return_tensors="pt").to(self.device) 
-        text_output = self.model.text_encoder(text.input_ids, attention_mask = text.attention_mask,                      
-                                            return_dict = True, mode = 'text')  
-        text_feat = F.normalize(self.model.text_proj(text_output.last_hidden_state[:,0,:]),dim=-1)                                    
+    def get_cached_text_feat(self, txt: list):
+
+        # text = self.model.tokenizer(txt, padding='max_length', truncation=True, max_length=35, 
+        #                       return_tensors="pt").to(self.device) 
+        # text_output = self.model.text_encoder(text.input_ids, attention_mask = text.attention_mask,                      
+        #                                     return_dict = True, mode = 'text')  
+        # text_feat = F.normalize(self.model.text_proj(text_output.last_hidden_state[:,0,:]),dim=-1)  
+        text = self.text_processors["eval"](txt)
+        text_feat = self.model.extract_features({"text_input": [text]}, mode="text")     
+        text_feat = text_feat.text_embeds_proj[:,0,:].t()          
         return text_feat
 
     def compute_cached_similarity(self, image: Image, text: list[str]):
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='JPEG')
+        t1 = time.time()
+        itc_scores = []
         with torch.no_grad():
             image_feat = self.get_cached_image_feat(img_byte_arr)
-            text_feat = self.get_cached_text_feat(tuple(text))
-            sim = image_feat @ text_feat.t()
-        sim = sim.cpu().detach().numpy()[0]
-        return sim
+            t1 = time.time()
+            for cur_text in text:
+                text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
+                itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
+        print("Time took: {}".format(time.time() - t1))   
+        # sim = itc_scores.cpu().detach().numpy()[0]
+        return itc_scores
 
     
     # def bbox_xywh_to_xyxy(self, xywh):
@@ -273,26 +315,32 @@ class VisualGroundingVlmImplementation(VlmInterface):
 
 def main():
     ### CLIP USAGE EXAMPLE ###
-    clip_vlm = ClipVlmImplementation()
+    # clip_vlm = ClipVlmImplementation()
 
-    url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg"
-    text =['a woman sitting on the beach with a dog', 'a man standing on the beach with a cat']
-    similarity = clip_vlm.compute_similarity_url(url, text)
-    print(f"CLIP outputs: {similarity}")
+    # url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg"
+    # text =['a woman sitting on the beach with a dog', 'a man standing on the beach with a cat']
+    # similarity = clip_vlm.compute_similarity_url(url, text)
+    # print(f"CLIP outputs: {similarity}")
 
-    ##################################
+    # ##################################
 
-    ### BLIP ITM USAGE EXAMPLE ###
+    # ### BLIP ITM USAGE EXAMPLE ###
 
-    blip_vlm = BlipItmVlmImplementation()
-    text = ['a woman sitting on the beach with a dog']
-    similarity = blip_vlm.compute_similarity_url(url, text)
-    itm_score = similarity
-    print(f"BLIP_ITM outputs:")
-    print('The image and text is matched with a probability of %.4f'%itm_score)
+    # blip_vlm = BlipItmVlmImplementation()
+    # text = ['a woman sitting on the beach with a dog']
+    # similarity = blip_vlm.compute_similarity_url(url, text)
+    # itm_score = similarity
+    # print(f"BLIP_ITM outputs:")
+    # print('The image and text is matched with a probability of %.4f'%itm_score)
 
     ## BLIP ITC USAGE EXAMPLE ###
     blip_vlm = BlipItcVlmImplementation()
+    text = ['a woman sitting on the beach with a dog']
+    similarity = blip_vlm.compute_similarity_url(url, text)
+    itc_score = similarity
+    print(f"BLIP_ITC outputs:")
+    print('The image and text is matched with a probability of %.4f'%itc_score)
+
     text = ['a woman sitting on the beach with a dog']
     similarity = blip_vlm.compute_similarity_url(url, text)
     itc_score = similarity
