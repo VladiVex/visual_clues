@@ -264,11 +264,11 @@ class Blip_2_ItcVlmImplementation(VlmBaseImplementation):
         with torch.no_grad():
             image_feat = self.load_image(image)
             for cur_text in text:
-                    if cur_text in self.ontology_names_to_all_embeddings:
-                        text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
-                    else:
-                        text_feat = self.get_cached_text_feat(cur_text)
-            itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
+                if cur_text in self.ontology_names_to_all_embeddings:
+                    text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
+                else:
+                    text_feat = self.get_cached_text_feat(cur_text)
+                itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
 
         return itc_scores
 
