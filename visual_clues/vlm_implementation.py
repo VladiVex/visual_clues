@@ -157,7 +157,6 @@ class BlipItmVlmImplementation(VlmBaseImplementation):
 
         return itm_scores
 
-
 class BlipItcVlmImplementation(VlmBaseImplementation):
     def __init__(self, init_with_cpu = False):
         if init_with_cpu:
@@ -167,16 +166,63 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             print("Warning: Initializing BLIP_ITC model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        # if not os.path.isfile(config['blip_model_url_large']):
-        #     print("Blip Checkpoints not found locally, Downloading in progres...")
-        #     dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
-        #     Path(dirs_path).mkdir(parents=True, exist_ok=True)
-        #     wget.download(config['blip_model_url_large_url'], dirs_path)
-        #     print("Successfully downloaded BLIP checkpoints.")
+        if not os.path.isfile(config['blip_model_url_large']):
+            print("Blip Checkpoints not found locally, Downloading in progres...")
+            dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
+            Path(dirs_path).mkdir(parents=True, exist_ok=True)
+            wget.download(config['blip_model_url_large_url'], dirs_path)
+            print("Successfully downloaded BLIP checkpoints.")
 
-        # self.half = True if self.device != 'cpu' else False
-        # model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
-        # model.eval()
+        model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
+        model.eval()
+        self.model = model.to(device=self.device)
+    
+    def load_image_url(self, url: str):
+        image = Image.open(requests.get(url, stream=True).raw).convert('RGB') 
+        return image
+
+    def load_image(self, image):   
+        
+        transform = transforms.Compose([
+            transforms.Resize((config['blip_image_size'], config['blip_image_size']),interpolation=InterpolationMode.BICUBIC),
+            transforms.ToTensor(),
+            transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
+            ]) 
+        image = transform(image).unsqueeze(0).to(self.device)   
+        return image
+
+    def compute_similarity(self, image : Image, text : list[str]):
+        image = self.load_image(image)
+        with torch.no_grad():
+            itc_output = self.model(image, text, match_head='itc')
+        # Check if its dotproduct
+        itc_scores = itc_output.cpu().detach().numpy()[0]
+        return itc_scores
+    
+    # def bbox_xywh_to_xyxy(self, xywh):
+    #     w, h = np.maximum(xywh[2] - 1, 0), np.maximum(xywh[3] - 1, 0)
+    #     return xywh[0], xywh[1], xywh[0] + w, xywh[1] + h
+    
+    def crop_image(self, image : Image, bbox: list[float]):
+        # xmin, ymin, xmax, ymax = self.bbox_xywh_to_xyxy((bbox[0],bbox[1],bbox[2],bbox[3]))
+        cropped_image = image.crop((bbox[0], bbox[1], bbox[2], bbox[3]))
+        # cropped_image.save("/notebooks/test123.jpg")
+        return cropped_image
+    
+    def compute_similarity_on_bboxes(self, image : Image, text : list[str], bbox : list[float]):
+
+        cropped_image = self.crop_image(image, bbox)
+        return self.compute_similarity(cropped_image, text)
+
+
+class Blip_2_ItcVlmImplementation(VlmBaseImplementation):
+    def __init__(self, init_with_cpu = False):
+        if init_with_cpu:
+            print("Warning: Initializing BLIP2_ITC model on CPU")
+            self.device = 'cpu'
+        else:
+            print("Warning: Initializing BLIP2_ITC model on GPU")
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         set_dir('/inputs')
 
@@ -195,8 +241,7 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         self.ontology_names_to_all_embeddings.update(self.blip2_names_to_obj_embeddings)
         self.ontology_names_to_all_embeddings.update(self.blip2_names_to_att_embeddings)
         self.ontology_names_to_all_embeddings.update(self.blip2_names_to_places_embeddings)
-        # self.model = model.to(device=self.device)
-        # self.model = model.half() if self.half else self.model
+
 
     def read_data(self, path, mode="pickle"):
         if mode == "pickle":
@@ -209,16 +254,6 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         return image
 
     def load_image(self, image : Image):   
-        
-        # transform = transforms.Compose([
-        #     transforms.Resize((config['blip_image_size'], config['blip_image_size']),interpolation=InterpolationMode.BICUBIC),
-        #     transforms.ToTensor(),
-        #     transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
-        #     ]) 
-        # if self.half:
-        #     image = transform(image).half().unsqueeze(0).to(self.device)  
-        # else:
-        #     image = transform(image).unsqueeze(0).to(self.device)
         image = self.vis_processors["eval"](image).unsqueeze(0).to(self.device)
         image = self.model.extract_features({"image": image}, mode="image")
         image = image.image_embeds_proj
@@ -242,19 +277,10 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         img = img_byte_arr.getvalue()
         image = Image.open(io.BytesIO(img))
         image_feat = self.load_image(image)
-        # image_embeds = self.model.visual_encoder(image) 
-        # image_feat = F.normalize(self.model.vision_proj(image_embeds[:,0,:]),dim=-1)
-
         return image_feat
     
     @lru_cache()
-    def get_cached_text_feat(self, txt: list):
-
-        # text = self.model.tokenizer(txt, padding='max_length', truncation=True, max_length=35, 
-        #                       return_tensors="pt").to(self.device) 
-        # text_output = self.model.text_encoder(text.input_ids, attention_mask = text.attention_mask,                      
-        #                                     return_dict = True, mode = 'text')  
-        # text_feat = F.normalize(self.model.text_proj(text_output.last_hidden_state[:,0,:]),dim=-1)  
+    def get_cached_text_feat(self, txt: list): 
         text = self.text_processors["eval"](txt)
         text_feat = self.model.extract_features({"text_input": [text]}, mode="text")     
         text_feat = text_feat.text_embeds_proj[:,0,:].t()          
@@ -267,22 +293,14 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         itc_scores = []
         with torch.no_grad():
             image_feat = self.get_cached_image_feat(img_byte_arr)
-            # t1 = time.time()
             for cur_text in text:
                 if cur_text in self.ontology_names_to_all_embeddings:
                     text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
                 else:
                     text_feat = self.get_cached_text_feat(cur_text)
-                itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
-        # print("Time took: {}".format(time.time() - t1))   
-        # sim = itc_scores.cpu().detach().numpy()[0]
+                itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu())) 
         return itc_scores
 
-    
-    # def bbox_xywh_to_xyxy(self, xywh):
-    #     w, h = np.maximum(xywh[2] - 1, 0), np.maximum(xywh[3] - 1, 0)
-    #     return xywh[0], xywh[1], xywh[0] + w, xywh[1] + h
-    
     def crop_image(self, image : Image, bbox: list[float]):
         # xmin, ymin, xmax, ymax = self.bbox_xywh_to_xyxy((bbox[0],bbox[1],bbox[2],bbox[3]))
         cropped_image = image.crop((bbox[0], bbox[1], bbox[2], bbox[3]))
