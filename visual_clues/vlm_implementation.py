@@ -225,12 +225,16 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         return image
 
     def compute_similarity(self, image : Image, text : list[str]):
-        image = self.load_image(image)
-        # text = self.text_processors["eval"](text)
+        itc_scores = []
         with torch.no_grad():
-            itc_scores = self.model({"image": image, "text_input": text}, match_head='itc')
-        # Check if its dotproduct
-        #itc_scores = itc_output.cpu().detach().numpy()[0]
+            image_feat = self.load_image(image)
+            for cur_text in text:
+                    if cur_text in self.ontology_names_to_all_embeddings:
+                        text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
+                    else:
+                        text_feat = self.get_cached_text_feat(cur_text)
+            itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
+
         return itc_scores
 
     @lru_cache()
@@ -263,14 +267,14 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         itc_scores = []
         with torch.no_grad():
             image_feat = self.get_cached_image_feat(img_byte_arr)
-            t1 = time.time()
+            # t1 = time.time()
             for cur_text in text:
                 if cur_text in self.ontology_names_to_all_embeddings:
                     text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
                 else:
                     text_feat = self.get_cached_text_feat(cur_text)
                 itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
-        print("Time took: {}".format(time.time() - t1))   
+        # print("Time took: {}".format(time.time() - t1))   
         # sim = itc_scores.cpu().detach().numpy()[0]
         return itc_scores
 
