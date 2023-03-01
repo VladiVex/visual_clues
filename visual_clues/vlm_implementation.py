@@ -265,7 +265,7 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             image_feat = self.get_cached_image_feat(img_byte_arr)
             t1 = time.time()
             for cur_text in text:
-                if cur_text in ontology_names_to_all_embeddings:
+                if cur_text in self.ontology_names_to_all_embeddings:
                     text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
                 else:
                     text_feat = self.get_cached_text_feat(cur_text)
