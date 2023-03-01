@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardi
 from visual_clues.ontology_implementation import SingleOntologyImplementation
 from visual_clues.blip import BLIP_Captioner
 from visual_clues.yolov7_implementation import YoloTrackerModel
-from visual_clues.vlm_implementation import BlipItcVlmImplementation
+# from visual_clues.vlm_implementation import Blip_2_ItcVlmImplementation
 
 # from visual_clues.bboxes_implementation import DetectronBBInitter
 
@@ -34,22 +34,22 @@ class TokensPipeline:
         self.collection_name = "s4_visual_clues"
         # self.db = self.nre.db
         self.blip_captioner = BLIP_Captioner()
-        self.ontology_objects = SingleOntologyImplementation('vg_objects', vlm_name="blip_itc")
-        self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip_itc")
-        self.ontology_attributes = SingleOntologyImplementation('vg_attributes', vlm_name="blip_itc")
+        self.ontology_objects = SingleOntologyImplementation('vg_objects', vlm_name="blip2_itc")
+        self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip2_itc")
+        self.ontology_attributes = SingleOntologyImplementation('vg_attributes', vlm_name="blip2_itc")
         self.yolo_detector = YoloTrackerModel()
-        self.blip_itc = BlipItcVlmImplementation()
+        # self.blip_itc = Blip_2_ItcVlmImplementation()
         # self.det_proposal = DetectronBBInitter()
 
 
     def load_img_url(self, img_url : str, pil_type=False):
         # Load PIL Image
         if pil_type:
-            resp = requests.get(img_url, stream=True).raw
+            resp = requests.get(img_url, stream=True, verify=False).raw
             image = Image.open(resp).convert('RGB')
         # Load OpenCV Image
         else:
-            resp = requests.get(img_url, stream=True).raw
+            resp = requests.get(img_url, stream=True, verify=False).raw
             image = np.asarray(bytearray(resp.read()), dtype="uint8")
             image = cv2.imdecode(image, cv2.IMREAD_COLOR)
         return image
@@ -240,7 +240,7 @@ class TokensPipeline:
         return input_type
     
     def check_image_url(self, img_url):
-        resp = requests.get(img_url, stream=True).raw
+        resp = requests.get(img_url, stream=True, verify=False).raw
         if not resp.reason == 'OK':
             print("Image URL: {} couldn't be loaded succesfully.".format(img_url))
             return False
