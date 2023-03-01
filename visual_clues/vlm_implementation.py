@@ -260,7 +260,6 @@ class Blip_2_ItcVlmImplementation(VlmBaseImplementation):
         else:
             print("Warning: Initializing BLIP2_ITC model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
         set_dir('/inputs')
 
         self.model, self.vis_processors, self.text_processors = load_model_and_preprocess("blip2_feature_extractor", "pretrain", device=self.device, is_eval=True)
@@ -305,7 +304,7 @@ class Blip_2_ItcVlmImplementation(VlmBaseImplementation):
                     text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
                 else:
                     text_feat = self.get_cached_text_feat(cur_text)
-                itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu()))
+                itc_scores.append(float((image_feat.cuda() @ text_feat.cuda()).max().cpu()))
 
         return itc_scores
 
