@@ -1,4 +1,4 @@
-from visual_clues.vlm_implementation import ClipVlmImplementation, BlipItcVlmImplementation, BlipItmVlmImplementation, VisualGroundingToVlmAdapter
+from visual_clues.vlm_implementation import ClipVlmImplementation, BlipItcVlmImplementation, BlipItmVlmImplementation, VisualGroundingToVlmAdapter, Blip_2_ItcVlmImplementation
 from visual_clues.utils.singleton import Singleton
 # from nebula3_experts_vg.vg.vg_expert import VisualGroundingVlmImplementation
 class VlmFactory:
@@ -8,7 +8,8 @@ class VlmFactory:
             'clip': ClipVlmImplementation,
             'blip_itc': BlipItcVlmImplementation,
             'blip_itm': BlipItmVlmImplementation,
-            'owl_vit': VisualGroundingToVlmAdapter
+            'owl_vit': VisualGroundingToVlmAdapter,
+            'blip2_itc': Blip_2_ItcVlmImplementation
             # 'vg': VisualGroundingVlmImplementation
         }
 
