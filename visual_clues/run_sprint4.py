@@ -6,7 +6,7 @@ from typing import Tuple
 def test_pipeline_task(pipeline_id):
     class MyTask(PipelineTask):
         def __init__(self):
-            super().__init__()
+            super().__init__(pipeline_id)
             self.visual_clues_pipeline = TokensPipeline()
             print("Initialized successfully.")
 
