@@ -5,8 +5,8 @@ from typing import Tuple
 
 def test_pipeline_task(pipeline_id):
     class MyTask(PipelineTask):
-        super().__init__()
         def __init__(self):
+            super().__init__()
             self.visual_clues_pipeline = TokensPipeline()
             print("Initialized successfully.")
 
