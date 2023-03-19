@@ -5,7 +5,7 @@ from PIL import Image
 import requests
 import torch
 import numpy as np
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, BlipProcessor, BlipForImageTextRetrieval
 from visual_clues.models.blip_itm import blip_itm
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
@@ -121,16 +121,17 @@ class BlipItmVlmImplementation(VlmBaseImplementation):
             print("Initializing model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        if not os.path.isfile(config['blip_model_url_large']):
-            print("Blip Checkpoints not found locally, Downloading in progres...")
-            dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
-            Path(dirs_path).mkdir(parents=True, exist_ok=True)
-            wget.download(config['blip_model_url_large_url'], config['blip_model_url_large'])
-            print("Successfully downloaded BLIP checkpoints.")
+        # if not os.path.isfile(config['blip_model_url_large']):
+        #     print("Blip Checkpoints not found locally, Downloading in progres...")
+        #     dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
+        #     Path(dirs_path).mkdir(parents=True, exist_ok=True)
+        #     wget.download(config['blip_model_url_large_url'], config['blip_model_url_large'])
+        #     print("Successfully downloaded BLIP checkpoints.")
 
-        model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
-        model.eval()
-        self.model = model.to(device=self.device)
+        # model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
+        # model.eval()
+        self.processor = BlipProcessor.from_pretrained("Salesforce/blip-itm-large-coco")
+        self.model = BlipForImageTextRetrieval.from_pretrained("Salesforce/blip-itm-large-coco").to(device=self.device)
     
     def load_image_url(self, url: str):
         image = Image.open(requests.get(url, stream=True).raw).convert('RGB')  
@@ -147,11 +148,15 @@ class BlipItmVlmImplementation(VlmBaseImplementation):
 
     def compute_similarity(self, image: Image, text: list[str]):
         
-        image = self.load_image(image)
+        # image = self.load_image(image)
 
-        with torch.no_grad():
-            itm_output = self.model(image, text, match_head='itm')
+        # with torch.no_grad():
+        #     itm_output = self.model(image, text, match_head='itm')
+        
         # Change from softmax to dotproduct
+        inputs = processor(raw_image, text, return_tensors="pt", padding=True).to("cuda")
+
+        itm_scores = model(**inputs)[0]
         itm_score = torch.nn.functional.softmax(itm_output,dim=1)[:,1]
         itm_scores = itm_score.cpu().detach().numpy()
 
@@ -166,18 +171,21 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
             print("Warning: Initializing BLIP_ITC model on GPU")
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        if not os.path.isfile(config['blip_model_url_large']):
-            print("Blip Checkpoints not found locally, Downloading in progres...")
-            dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
-            Path(dirs_path).mkdir(parents=True, exist_ok=True)
-            wget.download(config['blip_model_url_large_url'], dirs_path)
-            print("Successfully downloaded BLIP checkpoints.")
+        # if not os.path.isfile(config['blip_model_url_large']):
+        #     print("Blip Checkpoints not found locally, Downloading in progres...")
+        #     dirs_path = "/" + '/'.join(config['blip_model_url_large'].split("/")[1:-1]) + "/"
+        #     Path(dirs_path).mkdir(parents=True, exist_ok=True)
+        #     wget.download(config['blip_model_url_large_url'], dirs_path)
+        #     print("Successfully downloaded BLIP checkpoints.")
 
-        self.half = True if self.device != 'cpu' else False
-        model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
-        model.eval()
-        self.model = model.to(device=self.device)
-        self.model = model.half() if self.half else self.model
+        # self.half = True if self.device != 'cpu' else False
+        # model = blip_itm(pretrained=config['blip_model_url_large'], image_size=config['blip_image_size'], vit=config['blip_vit_large'])
+        # model.eval()
+        # self.model = model.to(device=self.device)
+        # self.model = model.half() if self.half else self.model
+        
+        self.processor = BlipProcessor.from_pretrained("Salesforce/blip-itm-large-coco")
+        self.model = BlipForImageTextRetrieval.from_pretrained("Salesforce/blip-itm-large-coco").to(device=self.device)
 
     
     def load_image_url(self, url: str):
@@ -198,12 +206,17 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         return image
 
     def compute_similarity(self, image : Image, text : list[str]):
-        image = self.load_image(image)
+        # image = self.load_image(image)
         with torch.no_grad():
-            itc_output = self.model(image, text, match_head='itc')
-        # Check if its dotproduct
-        itc_scores = itc_output.cpu().detach().numpy()[0]
+            inputs = self.processor(image, text, return_tensors="pt", padding=True).to("cuda")
+            cosine_score = self.model(**inputs, use_itm_head=False)[0]
+        itc_scores = cosine_score.cpu().detach().numpy()[0]
+
         return itc_scores
+            # itc_output = self.model(image, text, match_head='itc')
+        # Check if its dotproduct
+        # itc_scores = itc_output.cpu().detach().numpy()[0]
+        # return itc_scores
 
     @lru_cache()
     def get_cached_image_feat(self, img_byte_arr):
