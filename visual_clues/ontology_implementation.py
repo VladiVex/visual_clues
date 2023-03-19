@@ -62,15 +62,15 @@ class SingleOntologyImplementation(OntologyInterface):
         len_texts = len(texts) 
         for i in range(0, len_texts, div_texts):
             if (i + div_texts) > len_texts:
-                scores = self.vlm.compute_cached_similarity(image, texts[i:i + (len_texts - i)])
+                scores = self.vlm.compute_similarity(image, texts[i:i + (len_texts - i)])
                 for j, score in enumerate(scores):
                     outputs.append((self.ontology[i + j], float(score)))
             else:
-                scores = self.vlm.compute_cached_similarity(image, texts[i:i + div_texts])
+                scores = self.vlm.compute_similarity(image, texts[i:i + div_texts])
                 for j, score in enumerate(scores):
                     outputs.append((self.ontology[i + j], float(score)))
         
-        # scores = self.vlm.compute_cached_similarity(image, texts)
+        # scores = self.vlm.compute_similarity(image, texts)
         # for i, score in enumerate(scores):
         #     outputs.append((self.ontology[i], score))
         
