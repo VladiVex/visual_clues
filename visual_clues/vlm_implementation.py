@@ -16,7 +16,6 @@ from functools import lru_cache, wraps
 from time import sleep
 import io
 import torch.nn.functional as F
-from lavis.models import load_model_and_preprocess
 import time
 import pickle
 from torch.hub import set_dir
@@ -267,6 +266,7 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
 
 class Blip_2_ItcVlmImplementation(VlmBaseImplementation):
     def __init__(self, init_with_cpu = False):
+        from lavis.models import load_model_and_preprocess # because of packages incompatibility with transformers package
         if init_with_cpu:
             print("Warning: Initializing BLIP2_ITC model on CPU")
             self.device = 'cpu'
