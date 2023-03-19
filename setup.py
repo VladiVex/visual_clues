@@ -1,18 +1,16 @@
 from setuptools import setup, find_packages
-
+import glob
 setup(
     name='nebula3_visual_clues',
     packages=find_packages(),
-    install_requires=[
-        "numpy",
-        "pymilvus==1.1.1",
-        "python-arango==7.2.0"
-    ], # add any additional packages that
+    include_package_data=True,
+    install_requires=[], # add any additional packages that
     # needs to be installed along with your package. Eg: ''
-    description='Visual Clues task of nebula3',
-    version='0.3.10',
-    url='https://github.com/NEBULA3PR0JECT/nebula3_visual_clues',
-    author='Dima',
-    author_email='dsivov@gmail.com',
+    package_data = {'package_fiddler': ['visual_clues/configs/*', 'visual_clues/models/*', 'visual_clues/visual_token_ontology/vg/*']},
+    description='Visual Clues implementation for Nebula3',
+    version='0.3.11',
+    url='https://github.com/NEBULA3PR0JECT/visual_clues',
+    author='Ilan',
+    author_email='bebetteryou2015@gmail.com',
     keywords=['pip', 'pypi']
 )
