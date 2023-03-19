@@ -34,9 +34,9 @@ class TokensPipeline:
         self.collection_name = "s4_visual_clues"
         # self.db = self.nre.db
         self.blip_captioner = BLIP_Captioner()
-        self.ontology_objects = SingleOntologyImplementation('vg_objects', vlm_name="blip2_itc")
-        self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip2_itc")
-        self.ontology_attributes = SingleOntologyImplementation('vg_attributes', vlm_name="blip2_itc")
+        self.ontology_objects = SingleOntologyImplementation('vg_objects', vlm_name="blip_itc")
+        self.ontology_places = SingleOntologyImplementation('scenes', vlm_name="blip_itc")
+        self.ontology_attributes = SingleOntologyImplementation('vg_attributes', vlm_name="blip_itc")
         self.yolo_detector = YoloTrackerModel()
         # self.blip_itc = Blip_2_ItcVlmImplementation()
         # self.det_proposal = DetectronBBInitter()
