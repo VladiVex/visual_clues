@@ -264,102 +264,102 @@ class BlipItcVlmImplementation(VlmBaseImplementation):
         return self.compute_similarity(cropped_image, text)
 
 
-# class Blip_2_ItcVlmImplementation(VlmBaseImplementation):
-#     def __init__(self, init_with_cpu = False):
-#         from lavis.models import load_model_and_preprocess # because of packages incompatibility with transformers package
-#         if init_with_cpu:
-#             print("Warning: Initializing BLIP2_ITC model on CPU")
-#             self.device = 'cpu'
-#         else:
-#             print("Warning: Initializing BLIP2_ITC model on GPU")
-#             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-#         set_dir('/inputs')
+class Blip_2_ItcVlmImplementation(VlmBaseImplementation):
+    def __init__(self, init_with_cpu = False):
+        from lavis.models import load_model_and_preprocess # because of packages incompatibility with transformers package
+        if init_with_cpu:
+            print("Warning: Initializing BLIP2_ITC model on CPU")
+            self.device = 'cpu'
+        else:
+            print("Warning: Initializing BLIP2_ITC model on GPU")
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        set_dir('/inputs')
 
-#         self.model, self.vis_processors, self.text_processors = load_model_and_preprocess("blip2_feature_extractor", "pretrain", device=self.device, is_eval=True)
-#         self.model = self.model.float()
-#         blip2_names_to_obj_embeddings = self.read_data(vg_objects_path)
-#         self.blip2_names_to_obj_embeddings = {blip2_names_to_obj_embeddings[i][0]: blip2_names_to_obj_embeddings[i][1] for i in range(0, len(blip2_names_to_obj_embeddings))}
+        self.model, self.vis_processors, self.text_processors = load_model_and_preprocess("blip2_feature_extractor", "pretrain", device=self.device, is_eval=True)
+        self.model = self.model.float()
+        blip2_names_to_obj_embeddings = self.read_data(vg_objects_path)
+        self.blip2_names_to_obj_embeddings = {blip2_names_to_obj_embeddings[i][0]: blip2_names_to_obj_embeddings[i][1] for i in range(0, len(blip2_names_to_obj_embeddings))}
 
-#         blip2_names_to_att_embeddings = self.read_data(vg_atts_path)
-#         self.blip2_names_to_att_embeddings = {blip2_names_to_att_embeddings[i][0]: blip2_names_to_att_embeddings[i][1] for i in range(0, len(blip2_names_to_att_embeddings))}
+        blip2_names_to_att_embeddings = self.read_data(vg_atts_path)
+        self.blip2_names_to_att_embeddings = {blip2_names_to_att_embeddings[i][0]: blip2_names_to_att_embeddings[i][1] for i in range(0, len(blip2_names_to_att_embeddings))}
 
-#         blip2_names_to_places_embeddings = self.read_data(vg_places_path)
-#         self.blip2_names_to_places_embeddings = {blip2_names_to_places_embeddings[i][0]: blip2_names_to_places_embeddings[i][1] for i in range(0, len(blip2_names_to_places_embeddings))}
+        blip2_names_to_places_embeddings = self.read_data(vg_places_path)
+        self.blip2_names_to_places_embeddings = {blip2_names_to_places_embeddings[i][0]: blip2_names_to_places_embeddings[i][1] for i in range(0, len(blip2_names_to_places_embeddings))}
         
-#         self.ontology_names_to_all_embeddings = {}
-#         self.ontology_names_to_all_embeddings.update(self.blip2_names_to_obj_embeddings)
-#         self.ontology_names_to_all_embeddings.update(self.blip2_names_to_att_embeddings)
-#         self.ontology_names_to_all_embeddings.update(self.blip2_names_to_places_embeddings)
+        self.ontology_names_to_all_embeddings = {}
+        self.ontology_names_to_all_embeddings.update(self.blip2_names_to_obj_embeddings)
+        self.ontology_names_to_all_embeddings.update(self.blip2_names_to_att_embeddings)
+        self.ontology_names_to_all_embeddings.update(self.blip2_names_to_places_embeddings)
 
 
-#     def read_data(self, path, mode="pickle"):
-#         if mode == "pickle":
-#             with open(path, "rb") as f:
-#                 data = pickle.load(f)
-#                 return data
+    def read_data(self, path, mode="pickle"):
+        if mode == "pickle":
+            with open(path, "rb") as f:
+                data = pickle.load(f)
+                return data
 
-#     def load_image_url(self, url: str):
-#         image = Image.open(requests.get(url, stream=True).raw).convert('RGB') 
-#         return image
+    def load_image_url(self, url: str):
+        image = Image.open(requests.get(url, stream=True).raw).convert('RGB') 
+        return image
 
-#     def load_image(self, image : Image):   
-#         image = self.vis_processors["eval"](image).unsqueeze(0).to(self.device)
-#         image = self.model.extract_features({"image": image}, mode="image")
-#         image = image.image_embeds_proj
-#         return image
+    def load_image(self, image : Image):   
+        image = self.vis_processors["eval"](image).unsqueeze(0).to(self.device)
+        image = self.model.extract_features({"image": image}, mode="image")
+        image = image.image_embeds_proj
+        return image
 
-#     def compute_similarity(self, image : Image, text : list[str]):
-#         itc_scores = []
-#         with torch.no_grad():
-#             image_feat = self.load_image(image)
-#             for cur_text in text:
-#                 if cur_text in self.ontology_names_to_all_embeddings:
-#                     text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
-#                 else:
-#                     text_feat = self.get_cached_text_feat(cur_text)
-#                 itc_scores.append(float((image_feat.cuda() @ text_feat.cuda()).max().cpu()))
+    def compute_similarity(self, image : Image, text : list[str]):
+        itc_scores = []
+        with torch.no_grad():
+            image_feat = self.load_image(image)
+            for cur_text in text:
+                if cur_text in self.ontology_names_to_all_embeddings:
+                    text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
+                else:
+                    text_feat = self.get_cached_text_feat(cur_text)
+                itc_scores.append(float((image_feat.cuda() @ text_feat.cuda()).max().cpu()))
 
-#         return itc_scores
+        return itc_scores
 
-#     @lru_cache()
-#     def get_cached_image_feat(self, img_byte_arr):
-#         img = img_byte_arr.getvalue()
-#         image = Image.open(io.BytesIO(img))
-#         image_feat = self.load_image(image)
-#         return image_feat
+    @lru_cache()
+    def get_cached_image_feat(self, img_byte_arr):
+        img = img_byte_arr.getvalue()
+        image = Image.open(io.BytesIO(img))
+        image_feat = self.load_image(image)
+        return image_feat
     
-#     @lru_cache()
-#     def get_cached_text_feat(self, txt: list): 
-#         text = self.text_processors["eval"](txt)
-#         text_feat = self.model.extract_features({"text_input": [text]}, mode="text")     
-#         text_feat = text_feat.text_embeds_proj[:,0,:].t()          
-#         return text_feat
+    @lru_cache()
+    def get_cached_text_feat(self, txt: list): 
+        text = self.text_processors["eval"](txt)
+        text_feat = self.model.extract_features({"text_input": [text]}, mode="text")     
+        text_feat = text_feat.text_embeds_proj[:,0,:].t()          
+        return text_feat
 
-#     def compute_cached_similarity(self, image: Image, text: list[str]):
-#         img_byte_arr = io.BytesIO()
-#         image.save(img_byte_arr, format='JPEG')
-#         t1 = time.time()
-#         itc_scores = []
-#         with torch.no_grad():
-#             image_feat = self.get_cached_image_feat(img_byte_arr)
-#             for cur_text in text:
-#                 if cur_text in self.ontology_names_to_all_embeddings:
-#                     text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
-#                 else:
-#                     text_feat = self.get_cached_text_feat(cur_text)
-#                 itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu())) 
-#         return itc_scores
+    def compute_cached_similarity(self, image: Image, text: list[str]):
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='JPEG')
+        t1 = time.time()
+        itc_scores = []
+        with torch.no_grad():
+            image_feat = self.get_cached_image_feat(img_byte_arr)
+            for cur_text in text:
+                if cur_text in self.ontology_names_to_all_embeddings:
+                    text_feat = self.ontology_names_to_all_embeddings[cur_text][:,0,:].t()
+                else:
+                    text_feat = self.get_cached_text_feat(cur_text)
+                itc_scores.append(float((image_feat @ text_feat.cuda()).max().cpu())) 
+        return itc_scores
 
-#     def crop_image(self, image : Image, bbox: list[float]):
-#         # xmin, ymin, xmax, ymax = self.bbox_xywh_to_xyxy((bbox[0],bbox[1],bbox[2],bbox[3]))
-#         cropped_image = image.crop((bbox[0], bbox[1], bbox[2], bbox[3]))
-#         # cropped_image.save("/notebooks/test123.jpg")
-#         return cropped_image
+    def crop_image(self, image : Image, bbox: list[float]):
+        # xmin, ymin, xmax, ymax = self.bbox_xywh_to_xyxy((bbox[0],bbox[1],bbox[2],bbox[3]))
+        cropped_image = image.crop((bbox[0], bbox[1], bbox[2], bbox[3]))
+        # cropped_image.save("/notebooks/test123.jpg")
+        return cropped_image
     
-#     def compute_similarity_on_bboxes(self, image : Image, text : list[str], bbox : list[float]):
+    def compute_similarity_on_bboxes(self, image : Image, text : list[str], bbox : list[float]):
 
-#         cropped_image = self.crop_image(image, bbox)
-#         return self.compute_similarity(cropped_image, text)
+        cropped_image = self.crop_image(image, bbox)
+        return self.compute_similarity(cropped_image, text)
     
 # class VisualGroundingVlmImplementation(VlmInterface):
 #         def __init__(self):
