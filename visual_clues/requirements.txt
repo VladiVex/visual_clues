@@ -1,12 +1,1 @@
-fairscale==0.4.4
-fastapi==0.85.2
-gdown==4.5.1
-timm==0.4.12
-torch==1.12.0+cu116
-torchaudio==0.12.0+cu116
-torchmetrics==0.10.2
-torchvision==0.13.0+cu116
-tqdm==4.64.0
-transformers==4.15.0
-wget==3.2
 git+https://github.com/salesforce/LAVIS.git@47e0f3f25ca763975738c7224c8369207812ce6c
