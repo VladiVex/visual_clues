@@ -273,3 +273,4 @@ xlrd==1.1.0
 xxhash==3.0.0
 yarl==1.7.2
 zipp==3.8.1
+git+https://github.com/salesforce/LAVIS.git@47e0f3f25ca763975738c7224c8369207812ce6c
